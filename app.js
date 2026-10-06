@@ -250,6 +250,7 @@
     });
     if (error) throw error;
     if (!data) return false;
+    localStorage.removeItem(SUPER_ADMIN_FLAG);
     await createSession(projectId);
     return true;
   }
@@ -264,6 +265,44 @@
     await createSession(null);
     setSuperAdminFlag();
     return true;
+  }
+
+  async function loginWithCredentials(login, password, projectHint) {
+    if (await loginSuperAdmin(login, password)) {
+      return { role: 'super_admin' };
+    }
+
+    const client = getClient();
+    const projectIds = [];
+
+    if (projectHint) {
+      const { data, error } = await client
+        .from('projects')
+        .select('id')
+        .eq('id', projectHint)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) projectIds.push(data.id);
+    }
+
+    const { data: projects, error } = await client
+      .from('projects')
+      .select('id')
+      .eq('is_active', true);
+    if (error) throw error;
+
+    (projects || []).forEach(function (project) {
+      if (project.id !== projectHint) projectIds.push(project.id);
+    });
+
+    for (const projectId of projectIds) {
+      if (await loginProject(projectId, login, password)) {
+        return { role: 'project_admin', projectId: projectId };
+      }
+    }
+
+    return null;
   }
 
   // ============================================================
@@ -567,6 +606,7 @@
     // логин
     loginProject: loginProject,
     loginSuperAdmin: loginSuperAdmin,
+    loginWithCredentials: loginWithCredentials,
 
     // guards
     requireProjectAuth: requireProjectAuth,
