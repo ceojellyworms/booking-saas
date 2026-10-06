@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>kamidere — Панель владельца</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- ============ TOPBAR ============ -->
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <div class="topbar-brand" id="brand">
+          <span class="dot"></span>
+          <img id="brand-logo" class="hidden" alt="" />
+          <span id="brand-name">Загрузка…</span>
+        </div>
+        <div class="row gap-1">
+          <a class="btn btn-sm" id="btn-public" target="_blank" rel="noopener">Открыть форму</a>
+          <button class="btn btn-sm btn-ghost" id="btn-logout">Выйти</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <div class="container">
+
+        <div class="tabs mb-3" role="tablist" id="tabs">
+          <button class="tab is-active" data-tab="bookings" type="button">Заявки</button>
+          <button class="tab" data-tab="services" type="button">Услуги</button>
+          <button class="tab" data-tab="appearance" type="button">Оформление</button>
+          <button class="tab" data-tab="settings" type="button">Настройки</button>
+        </div>
+
+        <!-- ============ ВКЛАДКА: ЗАЯВКИ ============ -->
+        <section class="tab-panel is-active" data-panel="bookings">
+          <div class="row row-between mb-2">
+            <h2 class="mb-0">Заявки</h2>
+            <div class="row">
+              <select class="select" id="bk-filter" style="min-width:150px">
+                <option value="">Все статусы</option>
+                <option value="new">Новые</option>
+                <option value="confirmed">Подтверждённые</option>
+                <option value="done">Выполненные</option>
+                <option value="cancelled">Отменённые</option>
+              </select>
+              <button class="btn btn-sm" id="bk-refresh">Обновить</button>
+            </div>
+          </div>
+
+          <div class="bookings-grid" id="bookings-list">
+            <div class="empty">Загрузка заявок…</div>
+          </div>
+        </section>
+
+        <!-- ============ ВКЛАДКА: УСЛУГИ ============ -->
+        <section class="tab-panel" data-panel="services">
+          <div class="row row-between mb-2">
+            <h2 class="mb-0">Услуги</h2>
+            <button class="btn btn-primary btn-sm" id="sv-add">+ Добавить услугу</button>
+          </div>
+          <div class="services" id="services-list">
+            <div class="empty">Загрузка услуг…</div>
+          </div>
+        </section>
+
+        <!-- ============ ВКЛАДКА: ОФОРМЛЕНИЕ ============ -->
+        <section class="tab-panel" data-panel="appearance">
+          <h2>Оформление</h2>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>Цвета</h3>
+              <div class="field">
+                <label for="ap-accent">Акцентный цвет</label>
+                <input class="input" id="ap-accent" type="color" />
+              </div>
+              <div class="field">
+                <label for="ap-bg">Цвет фона</label>
+                <input class="input" id="ap-bg" type="color" />
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Логотип и баннер</h3>
+              <div class="field">
+                <label for="ap-logo">Логотип</label>
+                <input class="input" id="ap-logo" type="file" accept="image/*" />
+                <span class="field-hint" id="ap-logo-hint"></span>
+              </div>
+              <div class="field">
+                <label for="ap-banner">Баннер</label>
+                <input class="input" id="ap-banner" type="file" accept="image/*" />
+                <span class="field-hint" id="ap-banner-hint"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <h3>Превью баннера</h3>
+            <div class="banner banner-compact" id="ap-preview-banner">
+              <div class="banner-content">
+                <div class="banner-logo" id="ap-preview-logo"><span class="muted">◆</span></div>
+                <div>
+                  <div class="banner-title" id="ap-preview-name">Название бизнеса</div>
+                  <div class="banner-sub">Онлайн-запись</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <button class="btn btn-primary" id="ap-save">Сохранить оформление</button>
+          </div>
+        </section>
+
+        <!-- ============ ВКЛАДКА: НАСТРОЙКИ ============ -->
+        <section class="tab-panel" data-panel="settings">
+          <h2>Настройки</h2>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <h3>Основное</h3>
+              <div class="field">
+                <label for="st-name">Название бизнеса</label>
+                <input class="input" id="st-name" type="text" />
+              </div>
+              <div class="field">
+                <label for="st-phone">Телефон</label>
+                <input class="input" id="st-phone" type="tel" />
+              </div>
+              <div class="field">
+                <label for="st-address">Адрес</label>
+                <input class="input" id="st-address" type="text" />
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Часы работы</h3>
+              <div class="field">
+                <label for="st-start">Начало</label>
+                <input class="input" id="st-start" type="time" />
+              </div>
+              <div class="field">
+                <label for="st-end">Конец</label>
+                <input class="input" id="st-end" type="time" />
+              </div>
+              <div class="field">
+                <label>Рабочие дни</label>
+                <div class="row" id="st-days"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="row row-between mb-1">
+              <h3 class="mb-0">Соцсети</h3>
+              <button class="btn btn-sm" type="button" id="st-add-social">+ Добавить</button>
+            </div>
+            <div id="st-socials" class="col"></div>
+          </div>
+
+          <div class="card mt-3">
+            <h3>Смена пароля</h3>
+            <div class="field">
+              <label for="st-password">Новый пароль</label>
+              <div class="row">
+                <input class="input flex-1" id="st-password" type="text" autocapitalize="off" spellcheck="false" />
+                <button class="btn btn-sm" type="button" id="st-genpass">Сгенерировать</button>
+              </div>
+              <span class="field-hint">Оставьте пустым, чтобы не менять</span>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <button class="btn btn-primary" id="st-save">Сохранить настройки</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span class="muted small">kamidere · панель владельца бизнеса</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ============ МОДАЛКА: УСЛУГА ============ -->
+  <div class="modal-backdrop" id="service-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="sm-title">Новая услуга</h3>
+        <button class="modal-close" type="button" data-close>&times;</button>
+      </div>
+
+      <form id="service-form" autocomplete="off" novalidate>
+        <div class="field">
+          <label for="sm-name">Название</label>
+          <input class="input" id="sm-name" type="text" required />
+        </div>
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="sm-price">Цена, ₽</label>
+            <input class="input" id="sm-price" type="number" min="0" step="1" />
+          </div>
+          <div class="field">
+            <label for="sm-duration">Длительность, мин</label>
+            <input class="input" id="sm-duration" type="number" min="5" step="5" value="60" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="sm-desc">Описание</label>
+          <textarea class="textarea" id="sm-desc" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="sm-image">Картинка</label>
+          <input class="input" id="sm-image" type="file" accept="image/*" />
+          <span class="field-hint" id="sm-image-hint"></span>
+        </div>
+
+        <div class="row row-between mt-2">
+          <button class="btn" type="button" data-close>Отмена</button>
+          <button class="btn btn-primary" type="submit" id="sm-save">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const $ = function (s) { return document.querySelector(s); };
+    const $$ = function (s) { return Array.from(document.querySelectorAll(s)); };
+
+    const DAYS = [
+      { v: 1, label: 'Пн' }, { v: 2, label: 'Вт' }, { v: 3, label: 'Ср' },
+      { v: 4, label: 'Чт' }, { v: 5, label: 'Пт' }, { v: 6, label: 'Сб' },
+      { v: 0, label: 'Вс' }
+    ];
+
+    const STATUS_LABELS = {
+      new: 'Новая',
+      confirmed: 'Подтверждена',
+      done: 'Выполнена',
+      cancelled: 'Отменена'
+    };
+
+    const state = {
+      slug: null,
+      project: null,
+      bookings: [],
+      services: [],
+      socials: [],
+      editingService: null,
+      pendingServiceImage: null,
+      bookingsChannel: null,
+      projectChannel: null
+    };
+
+    // ============================================================
+    // BOOT
+    // ============================================================
+    (async function boot() {
+      const slug = App.getUrlParam('b');
+      if (!slug) {
+        location.href = '/';
+        return;
+      }
+      state.slug = slug;
+
+      const ok = await App.requireProjectAuth(slug);
+      if (!ok) return;
+
+      $('#btn-logout').addEventListener('click', function () {
+        App.clearSession();
+        location.href = '/';
+      });
+
+      $('#btn-public').href = 'booking.html?b=' + encodeURIComponent(slug);
+
+      // Вкладки
+      $$('#tabs .tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          const name = tab.getAttribute('data-tab');
+          $$('#tabs .tab').forEach(function (t) { t.classList.toggle('is-active', t === tab); });
+          $$('.tab-panel').forEach(function (p) {
+            p.classList.toggle('is-active', p.getAttribute('data-panel') === name);
+          });
+        });
+      });
+
+      await loadProject();
+      await loadBookings();
+      await loadServices();
+
+      subscribeRealtime();
+
+      wireEvents();
+    })();
+
+    // ============================================================
+    // PROJECT
+    // ============================================================
+    async function loadProject() {
+      try {
+        state.project = await App.getProjectAny(state.slug);
+        if (!state.project) {
+          App.toast('Проект не найден', 'error');
+          return;
+        }
+        applyProjectToUI(state.project);
+        App.applyTheme(state.project);
+      } catch (err) {
+        console.error(err);
+        App.toast('Не удалось загрузить проект', 'error');
+      }
+    }
+
+    function applyProjectToUI(p) {
+      // Topbar
+      $('#brand-name').textContent = p.business_name || 'Бизнес';
+      if (p.logo_url) {
+        const img = $('#brand-logo');
+        img.src = p.logo_url;
+        img.classList.remove('hidden');
+      }
+
+      // Оформление
+      $('#ap-accent').value = p.accent_color || '#ef4444';
+      $('#ap-bg').value = p.background_color || '#0a0a0a';
+      $('#ap-logo-hint').textContent = p.logo_url ? 'Логотип загружен' : 'Не загружен';
+      $('#ap-banner-hint').textContent = p.banner_url ? 'Баннер загружен' : 'Не загружен';
+      updatePreview();
+
+      // Настройки
+      $('#st-name').value = p.business_name || '';
+      $('#st-phone').value = p.phone || '';
+      $('#st-address').value = p.address || '';
+      const wh = p.work_hours || { start: '09:00', end: '20:00', days: [1,2,3,4,5,6] };
+      $('#st-start').value = wh.start || '09:00';
+      $('#st-end').value = wh.end || '20:00';
+      renderDays(wh.days || []);
+
+      const sl = p.social_links || {};
+      state.socials = Object.keys(sl).map(function (k) { return { name: k, url: sl[k] }; });
+      renderSocials();
+    }
+
+    function updatePreview() {
+      const accent = $('#ap-accent').value;
+      const bg = $('#ap-bg').value;
+      document.documentElement.style.setProperty('--accent', accent);
+      document.documentElement.style.setProperty('--bg', bg);
+
+      const logoBox = $('#ap-preview-logo');
+      if (state.project && state.project.logo_url) {
+        logoBox.innerHTML = '<img src="' + App.escapeHtml(state.project.logo_url) + '" alt="" />';
+      } else {
+        logoBox.innerHTML = '<span class="muted">◆</span>';
+      }
+
+      const banner = $('#ap-preview-banner');
+      if (state.project && state.project.banner_url) {
+        banner.style.backgroundImage = 'linear-gradient(135deg, ' + accent + ', rgba(0,0,0,0.55)), url(' + state.project.banner_url + ')';
+      } else {
+        banner.style.backgroundImage = '';
+      }
+
+      $('#ap-preview-name').textContent = (state.project && state.project.business_name) || 'Название бизнеса';
+    }
+
+    // ============================================================
+    // REALTIME
+    // ============================================================
+    function subscribeRealtime() {
+      // Заявки
+      state.bookingsChannel = App.subscribeBookings(state.slug, {
+        onInsert: function (row) {
+          state.bookings.unshift(row);
+          renderBookings();
+          App.playNotificationSound();
+          App.toast('Новая заявка: ' + (row.client_name || '') , 'success');
+        },
+        onUpdate: function (row) {
+          const i = state.bookings.findIndex(function (b) { return b.id === row.id; });
+          if (i >= 0) state.bookings[i] = row;
+          else state.bookings.unshift(row);
+          renderBookings();
+        },
+        onDelete: function (old) {
+          state.bookings = state.bookings.filter(function (b) { return b.id !== old.id; });
+          renderBookings();
+        }
+      });
+
+      // Услуги + проект
+      state.projectChannel = App.subscribeProject(state.slug, {
+        onService: function () { loadServices(); },
+        onProject: function (payload) {
+          if (payload && payload.new) {
+            state.project = payload.new;
+            applyProjectToUI(state.project);
+            App.applyTheme(state.project);
+          }
+        }
+      });
+    }
+
+    // ============================================================
+    // BOOKINGS
+    // ============================================================
+    async function loadBookings() {
+      try {
+        state.bookings = await App.listBookings(state.slug);
+        renderBookings();
+      } catch (err) {
+        console.error(err);
+        $('#bookings-list').innerHTML = '<div class="empty">Не удалось загрузить заявки</div>';
+      }
+    }
+
+    function renderBookings() {
+      const wrap = $('#bookings-list');
+      const filter = $('#bk-filter').value;
+      const items = filter
+        ? state.bookings.filter(function (b) { return b.status === filter; })
+        : state.bookings;
+
+      if (!items.length) {
+        wrap.innerHTML = '<div class="empty">Заявок пока нет</div>';
+        return;
+      }
+
+      wrap.innerHTML = items.map(function (b) {
+        const status = b.status || 'new';
+        const dt = App.formatDate(b.booking_date) + ' · ' + App.formatTime(b.booking_time);
+        const created = App.formatDateTime(b.created_at);
+        const noteHtml = b.notes
+          ? '<div class="booking-note">' + App.escapeHtml(b.notes) + '</div>'
+          : '';
+        const carHtml = b.car_info
+          ? '<div class="booking-meta"><span>🚗 ' + App.escapeHtml(b.car_info) + '</span></div>'
+          : '';
+
+        return ''
+          + '<div class="booking-card status-' + status + '" data-id="' + App.escapeHtml(b.id) + '">'
+          +   '<div class="booking-head">'
+          +     '<div>'
+          +       '<div class="booking-name">' + App.escapeHtml(b.client_name || '—') + '</div>'
+          +       '<div class="booking-phone">' + App.escapeHtml(b.client_phone || '') + '</div>'
+          +     '</div>'
+          +     '<span class="badge badge-' + status + '">' + (STATUS_LABELS[status] || status) + '</span>'
+          +   '</div>'
+          +   '<div class="booking-meta">'
+          +     '<span>📅 ' + dt + '</span>'
+          +     (b.service_name ? '<span>✂ ' + App.escapeHtml(b.service_name) + '</span>' : '')
+          +   '</div>'
+          +   carHtml
+          +   noteHtml
+          +   '<div class="booking-meta small"><span class="muted">Создана: ' + created + '</span></div>'
+          +   '<div class="status-actions">'
+          +     '<button class="btn btn-sm" data-set="new">Новая</button>'
+          +     '<button class="btn btn-sm" data-set="confirmed">Подтвердить</button>'
+          +     '<button class="btn btn-sm" data-set="done">Выполнена</button>'
+          +     '<button class="btn btn-sm" data-set="cancelled">Отменить</button>'
+          +     '<button class="btn btn-sm btn-danger" data-act="delete">Удалить</button>'
+          +   '</div>'
+          + '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('.booking-card').forEach(function (card) {
+        const id = card.getAttribute('data-id');
+
+        card.querySelectorAll('[data-set]').forEach(function (btn) {
+          btn.addEventListener('click', async function () {
+            const status = btn.getAttribute('data-set');
+            try {
+              await App.updateBookingStatus(id, status);
+              App.toast('Статус обновлён', 'success');
+            } catch (err) {
+              console.error(err);
+              App.toast('Ошибка: ' + (err.message || ''), 'error');
+            }
+          });
+        });
+
+        const del = card.querySelector('[data-act="delete"]');
+        del.addEventListener('click', async function () {
+          if (!confirm('Удалить заявку?')) return;
+          try {
+            await App.deleteBooking(id);
+            App.toast('Заявка удалена', 'success');
+          } catch (err) {
+            console.error(err);
+            App.toast('Ошибка: ' + (err.message || ''), 'error');
+          }
+        });
+      });
+    }
+
+    $('#bk-refresh').addEventListener('click', loadBookings);
+    $('#bk-filter').addEventListener('change', renderBookings);
+
+    // ============================================================
+    // SERVICES
+    // ============================================================
+    async function loadServices() {
+      try {
+        state.services = await App.listServices(state.slug);
+        renderServices();
+      } catch (err) {
+        console.error(err);
+        $('#services-list').innerHTML = '<div class="empty">Не удалось загрузить услуги</div>';
+      }
+    }
+
+    function renderServices() {
+      const wrap = $('#services-list');
+      if (!state.services.length) {
+        wrap.innerHTML = '<div class="empty">Пока нет услуг. Добавьте первую.</div>';
+        return;
+      }
+
+      wrap.innerHTML = state.services.map(function (s) {
+        const img = s.image_url
+          ? '<img src="' + App.escapeHtml(s.image_url) + '" alt="" />'
+          : '<span class="placeholder">◆</span>';
+        const price = s.price != null ? App.formatMoney(s.price) : '—';
+        const dur = (s.duration_minutes || 60) + ' мин';
+
+        return ''
+          + '<div class="service-card" data-id="' + App.escapeHtml(s.id) + '" style="cursor:default">'
+          +   '<div class="service-image">' + img + '</div>'
+          +   '<div class="service-body">'
+          +     '<div class="service-name">' + App.escapeHtml(s.name) + '</div>'
+          +     '<div class="service-meta">'
+          +       '<span class="service-price">' + price + '</span>'
+          +       '<span>·</span>'
+          +       '<span>' + dur + '</span>'
+          +     '</div>'
+          +     (s.description ? '<div class="service-desc">' + App.escapeHtml(s.description) + '</div>' : '')
+          +     '<div class="row gap-1" style="margin-top:8px">'
+          +       '<button class="btn btn-sm" data-act="edit">Редактировать</button>'
+          +       '<button class="btn btn-sm btn-danger" data-act="delete">Удалить</button>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('.service-card').forEach(function (card) {
+        const id = card.getAttribute('data-id');
+        const svc = state.services.find(function (s) { return s.id === id; });
+
+        card.querySelector('[data-act="edit"]').addEventListener('click', function () {
+          openServiceModal(svc);
+        });
+        card.querySelector('[data-act="delete"]').addEventListener('click', async function () {
+          if (!confirm('Удалить услугу «' + svc.name + '»?')) return;
+          try {
+            await App.deleteService(id);
+            App.toast('Услуга удалена', 'success');
+          } catch (err) {
+            console.error(err);
+            App.toast('Ошибка удаления', 'error');
+          }
+        });
+      });
+    }
+
+    function openServiceModal(svc) {
+      state.editingService = svc || null;
+      state.pendingServiceImage = null;
+
+      $('#sm-title').textContent = svc ? 'Редактировать услугу' : 'Новая услуга';
+      $('#sm-name').value = svc ? svc.name : '';
+      $('#sm-price').value = svc && svc.price != null ? svc.price : '';
+      $('#sm-duration').value = svc ? (svc.duration_minutes || 60) : 60;
+      $('#sm-desc').value = svc ? (svc.description || '') : '';
+      $('#sm-image').value = '';
+      $('#sm-image-hint').textContent = svc && svc.image_url ? 'Картинка загружена' : 'Не загружена';
+
+      $('#service-modal').classList.add('is-open');
+    }
+
+    $('#sv-add').addEventListener('click', function () { openServiceModal(null); });
+
+    $('#sm-image').addEventListener('change', async function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const id = state.editingService ? state.editingService.id : App.uuid();
+        const url = await App.uploadFile(file, 'services', id);
+        state.pendingServiceImage = url;
+        $('#sm-image-hint').textContent = 'Картинка загружена';
+        App.toast('Картинка загружена', 'success');
+      } catch (err) {
+        console.error(err);
+        App.toast('Ошибка загрузки картинки', 'error');
+      }
+    });
+
+    $('#service-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const name = $('#sm-name').value.trim();
+      if (!name) { App.toast('Укажите название', 'error'); return; }
+
+      const payload = {
+        project_id: state.slug,
+        name: name,
+        price: $('#sm-price').value === '' ? null : Number($('#sm-price').value),
+        duration_minutes: Number($('#sm-duration').value) || 60,
+        description: $('#sm-desc').value.trim() || null
+      };
+      if (state.pendingServiceImage !== null) {
+        payload.image_url = state.pendingServiceImage;
+      }
+
+      const btn = $('#sm-save');
+      btn.disabled = true;
+      const prev = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span> Сохранение…';
+
+      try {
+        if (state.editingService) {
+          await App.updateService(state.editingService.id, payload);
+        } else {
+          await App.createService({ id: App.uuid(), ...payload });
+        }
+        App.toast('Сохранено', 'success');
+        $('#service-modal').classList.remove('is-open');
+        await loadServices();
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка сохранения', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+
+    // ============================================================
+    // APPEARANCE
+    // ============================================================
+    $('#ap-accent').addEventListener('input', updatePreview);
+    $('#ap-bg').addEventListener('input', updatePreview);
+
+    $('#ap-logo').addEventListener('change', async function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const url = await App.uploadFile(file, 'logos', state.slug);
+        state.project.logo_url = url;
+        $('#ap-logo-hint').textContent = 'Логотип загружен';
+        updatePreview();
+        App.toast('Логотип загружен', 'success');
+      } catch (err) {
+        console.error(err);
+        App.toast('Ошибка загрузки', 'error');
+      }
+    });
+
+    $('#ap-banner').addEventListener('change', async function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const url = await App.uploadFile(file, 'banners', state.slug);
+        state.project.banner_url = url;
+        $('#ap-banner-hint').textContent = 'Баннер загружен';
+        updatePreview();
+        App.toast('Баннер загружен', 'success');
+      } catch (err) {
+        console.error(err);
+        App.toast('Ошибка загрузки', 'error');
+      }
+    });
+
+    $('#ap-save').addEventListener('click', async function () {
+      const btn = this;
+      btn.disabled = true;
+      const prev = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span> Сохранение…';
+      try {
+        await App.updateProject(state.slug, {
+          accent_color: $('#ap-accent').value,
+          background_color: $('#ap-bg').value,
+          logo_url: state.project.logo_url || null,
+          banner_url: state.project.banner_url || null
+        });
+        App.toast('Оформление сохранено', 'success');
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка сохранения', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+
+    // ============================================================
+    // SETTINGS
+    // ============================================================
+    function renderDays(active) {
+      const wrap = $('#st-days');
+      wrap.innerHTML = DAYS.map(function (d) {
+        const on = active.indexOf(d.v) !== -1;
+        return ''
+          + '<label class="btn btn-sm" style="cursor:pointer">'
+          +   '<input type="checkbox" value="' + d.v + '" ' + (on ? 'checked' : '') + ' style="margin-right:6px" />'
+          +   d.label
+          + '</label>';
+      }).join('');
+    }
+
+    function readDays() {
+      return $$('#st-days input[type="checkbox"]')
+        .filter(function (c) { return c.checked; })
+        .map(function (c) { return Number(c.value); });
+    }
+
+    function renderSocials() {
+      const wrap = $('#st-socials');
+      if (!state.socials.length) {
+        wrap.innerHTML = '<p class="muted small mb-0">Не добавлено</p>';
+        return;
+      }
+      wrap.innerHTML = state.socials.map(function (s, i) {
+        return ''
+          + '<div class="row" data-social-index="' + i + '">'
+          +   '<input class="input" style="flex:0 0 130px" placeholder="Название" value="' + App.escapeHtml(s.name) + '" data-f="name" />'
+          +   '<input class="input flex-1" placeholder="https://…" value="' + App.escapeHtml(s.url) + '" data-f="url" />'
+          +   '<button type="button" class="btn btn-sm btn-danger" data-remove>&times;</button>'
+          + '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('[data-social-index]').forEach(function (row) {
+        const idx = Number(row.getAttribute('data-social-index'));
+        row.querySelectorAll('input[data-f]').forEach(function (inp) {
+          inp.addEventListener('input', function () {
+            state.socials[idx][inp.getAttribute('data-f')] = inp.value;
+          });
+        });
+        row.querySelector('[data-remove]').addEventListener('click', function () {
+          state.socials.splice(idx, 1);
+          renderSocials();
+        });
+      });
+    }
+
+    $('#st-add-social').addEventListener('click', function () {
+      state.socials.push({ name: '', url: '' });
+      renderSocials();
+    });
+
+    $('#st-genpass').addEventListener('click', function () {
+      const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%';
+      let s = '';
+      const arr = new Uint32Array(12);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      for (let i = 0; i < 12; i++) s += chars[arr[i] % chars.length];
+      $('#st-password').value = s;
+    });
+
+    $('#st-save').addEventListener('click', async function () {
+      const btn = this;
+      const name = $('#st-name').value.trim();
+      if (!name) { App.toast('Укажите название бизнеса', 'error'); return; }
+
+      const socials = {};
+      state.socials.forEach(function (s) {
+        const n = (s.name || '').trim();
+        const u = (s.url || '').trim();
+        if (n && u) socials[n] = u;
+      });
+
+      const patch = {
+        business_name: name,
+        phone: $('#st-phone').value.trim() || null,
+        address: $('#st-address').value.trim() || null,
+        work_hours: {
+          start: $('#st-start').value || '09:00',
+          end: $('#st-end').value || '20:00',
+          days: readDays()
+        },
+        social_links: socials
+      };
+
+      const newPass = $('#st-password').value.trim();
+
+      btn.disabled = true;
+      const prev = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span> Сохранение…';
+
+      try {
+        await App.updateProject(state.slug, patch);
+        if (newPass) {
+          await App.updateProjectPassword(state.slug, newPass);
+          $('#st-password').value = '';
+          App.toast('Настройки и пароль обновлены', 'success');
+        } else {
+          App.toast('Настройки сохранены', 'success');
+        }
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка сохранения', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+
+    // ============================================================
+    // MODAL CLOSE
+    // ============================================================
+    document.querySelectorAll('[data-close]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const modal = btn.closest('.modal-backdrop');
+        if (modal) modal.classList.remove('is-open');
+      });
+    });
+    document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+      bd.addEventListener('click', function (e) {
+        if (e.target === bd) bd.classList.remove('is-open');
+      });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop.is-open').forEach(function (m) {
+          m.classList.remove('is-open');
+        });
+      }
+    });
+
+    // Экспорт для отладки
+    window.__admin = { state: state, loadServices: loadServices, loadBookings: loadBookings };
+  })();
+  </script>
+</body>
+</html>
