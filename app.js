@@ -485,6 +485,16 @@
     return data;
   }
 
+  async function listPublicBookingSlots(projectId, bookingDate, serviceId) {
+    const { data, error } = await getClient().rpc('get_public_booking_slots', {
+      p_project_id: projectId,
+      p_booking_date: bookingDate,
+      p_service_id: serviceId || null
+    });
+    if (error) throw error;
+    return data || [];
+  }
+
   async function updateBookingStatus(id, status) {
     const { data, error } = await getClient()
       .from('bookings')
@@ -637,6 +647,7 @@
     // заявки
     listBookings: listBookings,
     createBooking: createBooking,
+    listPublicBookingSlots: listPublicBookingSlots,
     updateBookingStatus: updateBookingStatus,
     deleteBooking: deleteBooking,
     subscribeBookings: subscribeBookings,

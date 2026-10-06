@@ -11,8 +11,11 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" id="site-icon" />
   <link rel="apple-touch-icon" href="icon.svg" id="apple-touch-icon" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="booking-theme.css?v=4" />
+  <link rel="stylesheet" href="booking-theme.css?v=5" />
 </head>
 <body class="booking-page">
   <div class="page">
@@ -46,7 +49,15 @@
           <div class="showcase-glass" aria-hidden="true">
             <div class="glass-orbit"></div>
             <svg class="glass-tesseract" id="glass-tesseract" viewBox="0 0 300 300"
-                 role="presentation" focusable="false"></svg>
+                 role="presentation" focusable="false">
+              <defs>
+                <linearGradient id="glass-edge-gradient" x1="40" y1="35" x2="270" y2="260" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#fff2e8" />
+                  <stop offset=".48" stop-color="#ff9b61" />
+                  <stop offset="1" stop-color="#e8702a" />
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
           <span class="showcase-index" aria-hidden="true">01</span>
         </section>
@@ -62,29 +73,48 @@
           </div>
         </section>
 
-        <!-- ============ SERVICES ============ -->
-        <section class="mt-3 animate-in-delay-1" id="services-section">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">Начнём с главного</p>
-              <h2>Выберите услугу</h2>
+        <!-- ============ BOOKING ============ -->
+        <section class="booking-panel mt-3 animate-in-delay-1" id="booking-panel">
+          <section id="services-section" aria-labelledby="services-heading">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Начнём с главного</p>
+                <h2 id="services-heading">Выберите услугу</h2>
+              </div>
+              <span class="section-step">01 <i></i> 03</span>
             </div>
-            <span class="section-step">01 <i></i> 03</span>
-          </div>
-          <div class="services" id="services-list">
-            <div class="empty">Загрузка услуг…</div>
-          </div>
-        </section>
+            <div class="services" id="services-list">
+              <div class="empty">Загрузка услуг…</div>
+            </div>
+          </section>
 
-        <!-- ============ BOOKING FORM ============ -->
-        <section class="mt-3 animate-in-delay-2" id="form-section" style="display:none">
-          <div class="card card-lg">
-            <h2>Запись</h2>
-            <p class="muted small" id="form-selected-service"></p>
+          <!-- ============ BOOKING FORM ============ -->
+          <section class="booking-details" id="form-section" style="display:none" aria-labelledby="booking-heading">
+            <div class="booking-details-heading">
+              <div>
+                <p class="section-kicker">02 · Дата и время</p>
+                <h2 id="booking-heading">Выберите удобное время</h2>
+              </div>
+              <p class="muted small" id="form-selected-service"></p>
+            </div>
+
+            <div class="booking-schedule">
+              <h3>Дата</h3>
+              <div class="booking-date-strip" id="bf-date-list" role="group" aria-label="Доступные даты"></div>
+              <p class="schedule-empty" id="bf-date-status" aria-live="polite"></p>
+              <input id="bf-date" type="hidden" />
+
+              <div class="booking-time-heading">
+                <h3>Свободное время</h3>
+                <span class="muted small">Интервалы по 30 минут</span>
+              </div>
+              <div class="booking-slot-list" id="bf-slot-list" role="group" aria-label="Свободное время"></div>
+              <p class="schedule-empty" id="bf-slot-status" aria-live="polite"></p>
+              <input id="bf-time" type="hidden" />
+            </div>
 
             <form class="booking-form" id="booking-form" autocomplete="off" novalidate>
-
-              <div class="field">
+              <div class="field booking-client-field">
                 <label for="bf-name">Ваше имя *</label>
                 <input class="input" id="bf-name" type="text" required />
               </div>
@@ -95,21 +125,10 @@
                        autocomplete="off" />
               </div>
 
-              <div class="field">
+              <div class="field booking-client-field">
                 <label for="bf-phone">Телефон *</label>
                 <input class="input" id="bf-phone" type="tel" inputmode="tel" autocomplete="tel"
                        placeholder="+7 (___) ___-__-__" maxlength="18" required />
-              </div>
-
-              <div class="row-2">
-                <div class="field">
-                  <label for="bf-date">Дата *</label>
-                  <input class="input" id="bf-date" type="date" required />
-                </div>
-                <div class="field">
-                  <label for="bf-time">Время *</label>
-                  <input class="input" id="bf-time" type="time" required />
-                </div>
               </div>
 
               <div class="field" id="bf-car-field">
@@ -141,7 +160,7 @@
                 </button>
               </div>
             </form>
-          </div>
+          </section>
         </section>
 
         <!-- ============ THANK YOU ============ -->
@@ -191,7 +210,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 
   <script>
   (function () {
@@ -204,6 +223,10 @@
       project: null,
       services: [],
       selectedService: null,
+      selectedDate: null,
+      availableSlots: [],
+      availabilityRequest: 0,
+      slotPoll: 0,
       manifestUrl: null,
       iconUrls: [],
       installPrompt: null
@@ -232,9 +255,9 @@
         $('#footer-name').textContent = project.business_name || '';
         applyProject(project);
         await configureWebApp(project);
+        wireForm();
         await loadServices();
         renderContacts(project);
-        wireForm();
 
       } catch (err) {
         console.error(err);
@@ -509,7 +532,8 @@
       if (!state.services.length) {
         wrap.innerHTML = '<div class="empty">Список услуг пока пуст</div>';
         $('#form-section').style.display = 'block';
-        $('#form-selected-service').textContent = 'Запись без выбора услуги';
+        $('#form-selected-service').textContent = 'Без выбора услуги · 60 мин';
+        loadBookingSlots();
         return;
       }
 
@@ -545,6 +569,7 @@
           selectService(card.getAttribute('data-id'));
         });
       });
+      selectService(state.services[0].id);
     }
 
     function selectService(id) {
@@ -557,16 +582,13 @@
         c.classList.toggle('is-selected', selected);
         c.setAttribute('aria-pressed', String(selected));
       });
-
       $('#form-section').style.display = 'block';
       $('#form-selected-service').textContent =
-        'Услуга: ' + svc.name + (svc.price != null ? ' · ' + App.formatMoney(svc.price) : '');
-
-      // Скролл к форме
-      $('#form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      // Фокус на первое поле
-      setTimeout(function () { $('#bf-name').focus(); }, 350);
+        svc.name + ' · ' + (svc.duration_minutes || 60) + ' мин'
+        + (svc.price != null ? ' · ' + App.formatMoney(svc.price) : '');
+      $('#bf-time').value = '';
+      state.availableSlots = [];
+      loadBookingSlots();
     }
 
     // ============================================================
@@ -625,24 +647,160 @@
     // ============================================================
     // FORM
     // ============================================================
-    function wireForm() {
-      // Дата: не раньше сегодня
-      const dateInput = $('#bf-date');
-      const today = new Date().toISOString().slice(0, 10);
-      dateInput.min = today;
-      dateInput.value = today;
+    function localDateString(date) {
+      return date.getFullYear() + '-'
+        + String(date.getMonth() + 1).padStart(2, '0') + '-'
+        + String(date.getDate()).padStart(2, '0');
+    }
 
-      // Время по умолчанию — из рабочих часов
-      const wh = state.project.work_hours || {};
-      if (wh.start) $('#bf-time').value = wh.start;
+    function isBusinessWorkday(dateString) {
+      const workDays = state.project.work_hours && state.project.work_hours.days;
+      if (!Array.isArray(workDays)) return false;
+      const day = new Date(dateString + 'T00:00:00').getDay();
+      return workDays.some(function (value) { return Number(value) === day; });
+    }
+
+    function renderBookingDates() {
+      const today = new Date();
+      const dates = [];
+      for (let offset = 0; offset <= 30; offset++) {
+        const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+        dates.push({
+          date: date,
+          value: localDateString(date),
+          isWorkday: isBusinessWorkday(localDateString(date))
+        });
+      }
+
+      const selected = dates.find(function (item) {
+        return item.value === state.selectedDate && item.isWorkday;
+      }) || dates.find(function (item) { return item.isWorkday; }) || dates[0];
+      state.selectedDate = selected.value;
+      $('#bf-date').value = selected.value;
+
+      $('#bf-date-list').innerHTML = dates.map(function (item, index) {
+        const label = index === 0
+          ? 'Сегодня'
+          : new Intl.DateTimeFormat('ru-RU', { weekday: 'short' }).format(item.date);
+        const day = new Intl.DateTimeFormat('ru-RU', { day: 'numeric' }).format(item.date);
+        const month = new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(item.date);
+        const fullDate = new Intl.DateTimeFormat('ru-RU', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long'
+        }).format(item.date);
+        const isSelected = item.value === selected.value;
+        return '<button class="booking-date' + (isSelected ? ' is-selected' : '') + '"'
+          + ' type="button" data-date="' + item.value + '"'
+          + ' aria-label="' + fullDate + '"'
+          + ' aria-pressed="' + String(isSelected) + '"'
+          + (item.isWorkday ? '' : ' disabled')
+          + '><span class="booking-date-weekday">' + label + '</span>'
+          + '<strong>' + day + '</strong><span class="booking-date-month">' + month + '</span></button>';
+      }).join('');
+
+      $('#bf-date-list').querySelectorAll('.booking-date:not(:disabled)').forEach(function (button) {
+        button.addEventListener('click', function () {
+          selectBookingDate(button.getAttribute('data-date'));
+        });
+      });
+
+      $('#bf-date-status').textContent = dates.some(function (item) { return item.isWorkday; })
+        ? ''
+        : 'Расписание на ближайшие 30 дней не настроено.';
+    }
+
+    function selectBookingDate(date) {
+      state.selectedDate = date;
+      $('#bf-date').value = date;
+      $('#bf-time').value = '';
+      state.availableSlots = [];
+      $('#bf-date-list').querySelectorAll('.booking-date').forEach(function (button) {
+        const selected = button.getAttribute('data-date') === date;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+      loadBookingSlots();
+    }
+
+    function renderBookingSlots(slots, emptyMessage) {
+      const wrap = $('#bf-slot-list');
+      wrap.innerHTML = slots.map(function (slot) {
+        const isSelected = $('#bf-time').value === slot;
+        return '<button class="booking-slot' + (isSelected ? ' is-selected' : '') + '"'
+          + ' type="button" data-time="' + slot + '" aria-pressed="' + String(isSelected) + '">'
+          + slot + '</button>';
+      }).join('');
+
+      wrap.querySelectorAll('.booking-slot').forEach(function (button) {
+        button.addEventListener('click', function () {
+          $('#bf-time').value = button.getAttribute('data-time');
+          renderBookingSlots(state.availableSlots);
+        });
+      });
+      $('#bf-slot-status').textContent = emptyMessage || '';
+    }
+
+    async function loadBookingSlots() {
+      if (!state.selectedDate || !state.project) return;
+      const requestId = ++state.availabilityRequest;
+      const date = state.selectedDate;
+      const serviceId = state.selectedService ? state.selectedService.id : null;
+
+      if (!isBusinessWorkday(date)) {
+        state.availableSlots = [];
+        $('#bf-time').value = '';
+        renderBookingSlots([], 'В этот день запись не ведётся.');
+        return;
+      }
+
+      renderBookingSlots(
+        state.availableSlots,
+        state.availableSlots.length ? 'Проверяем свободное время…' : 'Загружаем свободное время…'
+      );
+      try {
+        const result = await App.listPublicBookingSlots(state.slug, date, serviceId);
+        if (requestId !== state.availabilityRequest || date !== state.selectedDate
+            || serviceId !== (state.selectedService ? state.selectedService.id : null)) return;
+
+        const now = new Date();
+        const today = localDateString(now);
+        const currentTime = String(now.getHours()).padStart(2, '0') + ':'
+          + String(now.getMinutes()).padStart(2, '0');
+        state.availableSlots = result.map(function (row) {
+          return String(row.slot_time || '').slice(0, 5);
+        }).filter(function (slot) {
+          return /^\d{2}:\d{2}$/.test(slot) && (date !== today || slot > currentTime);
+        });
+        if (!state.availableSlots.includes($('#bf-time').value)) $('#bf-time').value = '';
+        const message = state.availableSlots.length
+          ? ''
+          : 'Свободного времени нет. Выберите другую дату.';
+        renderBookingSlots(state.availableSlots, message);
+      } catch (err) {
+        if (requestId !== state.availabilityRequest) return;
+        console.error(err);
+        state.availableSlots = [];
+        $('#bf-time').value = '';
+        renderBookingSlots([], 'Не удалось загрузить время. Проверьте подключение и попробуйте ещё раз.');
+        const retry = document.createElement('button');
+        retry.className = 'schedule-retry';
+        retry.type = 'button';
+        retry.textContent = 'Повторить';
+        retry.addEventListener('click', loadBookingSlots);
+        $('#bf-slot-list').appendChild(retry);
+      }
+    }
+
+    function wireForm() {
+      renderBookingDates();
 
       wireRussianPhone();
 
       $('#bf-cancel').addEventListener('click', resetForm);
       $('#th-again').addEventListener('click', function () {
         $('#thankyou-section').style.display = 'none';
-        $('#services-section').style.display = '';
-        $('#form-section').style.display = 'none';
+        $('#booking-panel').style.display = '';
         $('#contacts-section').style.display = '';
         state.selectedService = null;
         document.querySelectorAll('.service-card').forEach(function (c) {
@@ -650,10 +808,26 @@
           c.setAttribute('aria-pressed', 'false');
         });
         resetForm();
+        if (state.services.length) {
+          selectService(state.services[0].id);
+        } else {
+          $('#form-section').style.display = 'block';
+          loadBookingSlots();
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
       $('#booking-form').addEventListener('submit', submitBooking);
+      state.slotPoll = window.setInterval(function () {
+        if (document.visibilityState === 'visible'
+            && $('#booking-panel').style.display !== 'none'
+            && state.selectedDate) loadBookingSlots();
+      }, 20000);
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible'
+            && $('#booking-panel').style.display !== 'none'
+            && state.selectedDate) loadBookingSlots();
+      });
     }
 
     function wireRussianPhone() {
@@ -741,6 +915,8 @@
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const tesseractVertices = [];
     const tesseractEdges = [];
+    const tesseractLines = [];
+    const tesseractNodes = [];
     for (let bits = 0; bits < 16; bits++) {
       tesseractVertices.push([
         bits & 1 ? 1 : -1,
@@ -791,7 +967,7 @@
         const y = point[1] * perspective4d;
         const z = point[2] * perspective4d;
         const perspective3d = 4.2 / (4.2 - z);
-        const displayScale = 37;
+        const displayScale = 43;
         return {
           x: 150 + x * perspective3d * displayScale,
           y: 150 - y * perspective3d * displayScale,
@@ -802,7 +978,7 @@
       tesseractEdges.forEach(function (edge, index) {
         const start = points[edge[0]];
         const end = points[edge[1]];
-        const line = glassTesseract.children[index];
+        const line = tesseractLines[index];
         line.setAttribute('x1', start.x.toFixed(2));
         line.setAttribute('y1', start.y.toFixed(2));
         line.setAttribute('x2', end.x.toFixed(2));
@@ -811,7 +987,7 @@
       });
 
       points.forEach(function (point, index) {
-        const vertex = glassTesseract.children[tesseractEdges.length + index];
+        const vertex = tesseractNodes[index];
         vertex.setAttribute('cx', point.x.toFixed(2));
         vertex.setAttribute('cy', point.y.toFixed(2));
         vertex.style.opacity = String(0.58 + Math.max(-1, Math.min(1, point.depth * 0.22)) * 0.32);
@@ -819,11 +995,14 @@
     }
 
     tesseractEdges.forEach(function () {
-      glassTesseract.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      tesseractLines.push(line);
+      glassTesseract.appendChild(line);
     });
     tesseractVertices.forEach(function () {
       const vertex = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       vertex.setAttribute('r', '2.15');
+      tesseractNodes.push(vertex);
       glassTesseract.appendChild(vertex);
     });
     renderTesseract();
@@ -933,10 +1112,9 @@
       $('#bf-car').value = '';
       $('#bf-car-model').value = '';
       $('#bf-car-plate').value = '';
-      const today = new Date().toISOString().slice(0, 10);
-      $('#bf-date').value = today;
-      const wh = state.project.work_hours || {};
-      if (wh.start) $('#bf-time').value = wh.start;
+      $('#bf-time').value = '';
+      renderBookingDates();
+      loadBookingSlots();
     }
 
     // ============================================================
@@ -968,8 +1146,36 @@
           (phoneDigits.charAt(1) !== '8' && phoneDigits.charAt(1) !== '9')) {
         App.toast('Проверьте формат телефона', 'error'); $('#bf-phone').focus(); return;
       }
-      if (!date) { App.toast('Выберите дату', 'error'); $('#bf-date').focus(); return; }
-      if (!time) { App.toast('Выберите время', 'error'); $('#bf-time').focus(); return; }
+      if (!date) {
+        App.toast('Выберите дату', 'error');
+        const firstDate = $('#bf-date-list').querySelector('.booking-date:not(:disabled)');
+        if (firstDate) firstDate.focus();
+        return;
+      }
+      if (!time) {
+        App.toast('Выберите время', 'error');
+        const firstSlot = $('#bf-slot-list').querySelector('.booking-slot');
+        if (firstSlot) firstSlot.focus();
+        return;
+      }
+      const today = localDateString(new Date());
+      const maxDate = new Date();
+      maxDate.setDate(maxDate.getDate() + 30);
+      if (date < today || date > localDateString(maxDate)) {
+        App.toast('Запись доступна только на ближайшие 30 дней', 'error');
+        renderBookingDates();
+        return;
+      }
+      if (!isBusinessWorkday(date)) {
+        App.toast('Выберите рабочий день', 'error');
+        return;
+      }
+      if (!state.availableSlots.includes(time)) {
+        $('#bf-time').value = '';
+        App.toast('Это время уже недоступно. Выберите другое.', 'error');
+        loadBookingSlots();
+        return;
+      }
       if (isAutomotive && !carModel) {
         App.toast('Укажите марку и модель автомобиля', 'error');
         $('#bf-car-model').focus();
@@ -978,13 +1184,6 @@
       if (isAutomotive && !carPlate) {
         App.toast('Укажите госномер автомобиля', 'error');
         $('#bf-car-plate').focus();
-        return;
-      }
-
-      const wh = state.project.work_hours || {};
-      if (wh.start && wh.end && (time < wh.start || time > wh.end)) {
-        App.toast('Мы работаем с ' + wh.start + ' до ' + wh.end, 'error');
-        $('#bf-time').focus();
         return;
       }
 
@@ -1012,7 +1211,13 @@
         showThankYou(name);
       } catch (err) {
         console.error(err);
-        App.toast(err.message || 'Не удалось отправить заявку', 'error');
+        if (String(err.message || '').toLowerCase().indexOf('no longer available') !== -1) {
+          $('#bf-time').value = '';
+          App.toast('Это время только что заняли. Выберите другое.', 'error');
+          loadBookingSlots();
+        } else {
+          App.toast(err.message || 'Не удалось отправить заявку', 'error');
+        }
       } finally {
         btn.disabled = false;
         btn.textContent = prev;
@@ -1020,8 +1225,7 @@
     }
 
     function showThankYou(name) {
-      $('#services-section').style.display = 'none';
-      $('#form-section').style.display = 'none';
+      $('#booking-panel').style.display = 'none';
       $('#contacts-section').style.display = 'none';
 
       const t = $('#thankyou-text');

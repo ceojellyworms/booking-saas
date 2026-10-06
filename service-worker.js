@@ -1,11 +1,11 @@
 'use strict';
 
-const CACHE_NAME = 'kamidere-booking-shell-v4';
+const CACHE_NAME = 'kamidere-booking-shell-v5';
 const APP_SHELL = [
   './booking.html',
   './styles.css',
-  './booking-theme.css?v=4',
-  './app.js?v=4',
+  './booking-theme.css?v=5',
+  './app.js?v=5',
   './config.js',
   './icon.svg'
 ];

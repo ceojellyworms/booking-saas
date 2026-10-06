@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#050505" />
+  <title>Онлайн-запись</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --accent: #e8702a;
+      --accent-hover: #d2611f;
+      --ease: cubic-bezier(.16, 1, .3, 1);
+      --ink-secondary: rgba(255,255,255,.74);
+      --ink-muted: rgba(255,255,255,.5);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { min-height: 100%; background: #050505; }
+    body {
+      position: relative;
+      isolation: isolate;
+      min-height: 100dvh;
+      margin: 0;
+      overflow-x: hidden;
+      background: #050505;
+      color: #fff;
+      font: 400 15px/1.5 Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      letter-spacing: -.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; color: inherit; letter-spacing: inherit; }
+    button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .serif { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-weight: 500; }
+    .bg, .bg-spot { position: fixed; z-index: -2; inset: 0; pointer-events: none; }
+    .bg {
+      background:
+        radial-gradient(900px 600px at 85% -10%, rgba(232,112,42,.3), transparent 60%),
+        radial-gradient(700px 600px at 0% 105%, rgba(70,90,140,.22), transparent 60%),
+        #050505;
+    }
+    .bg-spot {
+      z-index: -1;
+      background:
+        linear-gradient(rgba(232,112,42,.27) 1px, transparent 1px) 0 0 / 44px 44px,
+        linear-gradient(90deg, rgba(232,112,42,.27) 1px, transparent 1px) 0 0 / 44px 44px,
+        radial-gradient(520px 420px at 50% 40%, rgba(232,112,42,.17), transparent 70%);
+      -webkit-mask-image: radial-gradient(circle 260px at var(--spot-x,-999px) var(--spot-y,-999px), #000 0, #000 40%, rgba(0,0,0,.75) 60%, rgba(0,0,0,.4) 75%, rgba(0,0,0,.12) 88%, transparent 100%);
+      mask-image: radial-gradient(circle 260px at var(--spot-x,-999px) var(--spot-y,-999px), #000 0, #000 40%, rgba(0,0,0,.75) 60%, rgba(0,0,0,.4) 75%, rgba(0,0,0,.12) 88%, transparent 100%);
+    }
+
+    /* Glass is reserved for the floating navigation and interactive controls. */
+    .glass {
+      position: relative;
+      border: 1px solid rgba(255,255,255,.16);
+      background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 0 rgba(255,255,255,.04), 0 18px 42px -16px rgba(0,0,0,.7);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(28px) saturate(180%);
+    }
+    .glass::before {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(120% 60% at 18% 0%, rgba(255,255,255,.16), transparent 55%);
+      content: "";
+      pointer-events: none;
+    }
+    .glass > * { position: relative; }
+
+    nav {
+      position: fixed;
+      z-index: 10;
+      inset: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: max(16px, env(safe-area-inset-top)) 20px 12px;
+      pointer-events: none;
+    }
+    .brand, .hours { pointer-events: auto; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; }
+    .brand svg { filter: drop-shadow(0 0 10px rgba(232,112,42,.32)); }
+    .brand-name { letter-spacing: -.045em; }
+    .hours { padding: 8px 16px; border-radius: 999px; color: var(--ink-secondary); font-size: 12px; font-weight: 500; }
+
+    main {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 800px);
+      margin: 0 auto;
+      padding: max(112px, calc(env(safe-area-inset-top) + 96px)) 20px 56px;
+    }
+    .hero { position: relative; margin-bottom: 31px; }
+    h1 {
+      margin: 0 0 15px;
+      color: #fff;
+      font-size: clamp(40px, 8.5vw, 76px);
+      font-weight: 400;
+      line-height: .98;
+      text-align: center;
+    }
+    h1 span { display: block; }
+    .headline-first { letter-spacing: -.04em; }
+    .headline-second { margin-top: -2px; letter-spacing: -.06em; }
+    .subtitle {
+      max-width: 430px;
+      margin: 0 auto;
+      color: var(--ink-secondary);
+      font-size: 14px;
+      text-align: center;
+      text-wrap: balance;
+    }
+    .hero-art {
+      position: absolute;
+      top: -17px;
+      right: -174px;
+      width: 200px;
+      aspect-ratio: 1;
+      opacity: .88;
+      pointer-events: none;
+    }
+    .hero-art::before {
+      position: absolute;
+      inset: 12%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,112,42,.2), rgba(232,112,42,.045) 48%, transparent 74%);
+      filter: blur(8px);
+      content: "";
+    }
+    .orbit { position: absolute; inset: -8%; border: 1px solid rgba(255,183,137,.28); border-radius: 50%; transform: rotateX(67deg) rotateZ(-24deg); }
+    .orbit::before, .orbit::after { position: absolute; inset: 17% -5%; border: 1px solid rgba(255,255,255,.13); border-radius: 50%; content: ""; }
+    .orbit::before { transform: rotate(58deg); }
+    .orbit::after { inset: 26% -12%; border-color: rgba(232,112,42,.17); transform: rotate(-54deg); }
+    .tesseract { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 6px rgba(255,221,197,.36)) drop-shadow(0 0 19px rgba(232,112,42,.42)); transform: translate(-50%, -50%); }
+    .tesseract line { stroke: url(#tesseract-stroke); stroke-width: 1.65; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .tesseract circle { fill: #fff7f0; filter: drop-shadow(0 0 3px rgba(255,244,231,.95)) drop-shadow(0 0 8px rgba(232,112,42,.85)); }
+
+    .booking-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(20px, 4vw, 32px);
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 30px;
+      background:
+        radial-gradient(ellipse at 96% 0%, rgba(232,112,42,.075), transparent 44%),
+        linear-gradient(145deg, #171513, #10100f 58%, #141210);
+      box-shadow: 0 24px 60px -12px rgba(0,0,0,.62), inset 0 1px rgba(255,255,255,.055);
+    }
+    .step { margin-bottom: 25px; }
+    .step:last-child { margin-bottom: 0; }
+    .step-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 12px;
+      color: var(--ink-muted);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .015em;
+    }
+    .step-heading em { color: var(--ink-secondary); font-style: normal; font-weight: 400; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      background: rgba(255,255,255,.055);
+      color: var(--ink-secondary);
+      cursor: pointer;
+      transition: transform 100ms ease-out, background .25s var(--ease), border-color .25s var(--ease), color .25s var(--ease), box-shadow .25s var(--ease);
+    }
+    .pill:hover:not(:disabled) { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.12); }
+    .pill:active:not(:disabled) { transform: scale(.96); }
+    .pill:focus-visible, input:focus-visible, .cta:focus-visible, .admin-demo summary:focus-visible, .ghost:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .pill[aria-pressed="true"] {
+      border-color: rgba(255,255,255,.3);
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 8px 24px -6px rgba(232,112,42,.48), inset 0 1px rgba(255,255,255,.34);
+    }
+    .chip {
+      display: flex;
+      min-height: 46px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8px 16px;
+      line-height: 1.25;
+      text-align: left;
+    }
+    .chip span { font-size: 12px; font-weight: 500; }
+    .chip small { margin-top: 2px; font-size: 10px; opacity: .72; }
+
+    .days {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin: -5px -8px -10px;
+      padding: 5px 8px 16px;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+    }
+    .days::-webkit-scrollbar { display: none; }
+    .day {
+      display: flex;
+      min-width: 58px;
+      flex: 0 0 58px;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 9px 0 8px;
+      border-radius: 21px;
+      scroll-snap-align: start;
+    }
+    .day .weekday { font-size: 10px; opacity: .72; }
+    .day .number { font-size: 19px; font-weight: 600; letter-spacing: -.03em; }
+    .day .month { min-height: 13px; font-size: 9px; opacity: .76; }
+    .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+    .slot { height: 42px; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .slot:disabled { border-color: rgba(255,255,255,.06); background: rgba(255,255,255,.025); color: rgba(255,255,255,.27); cursor: not-allowed; text-decoration: line-through; text-decoration-color: rgba(255,255,255,.19); }
+    .empty { grid-column: 1 / -1; margin: 0; padding: 14px 0 4px; color: var(--ink-secondary); font-size: 13px; }
+    .slot-note { margin: 10px 0 0; color: var(--ink-muted); font-size: 10px; }
+
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field label { display: block; margin: 0 0 6px 13px; color: var(--ink-muted); font-size: 11px; }
+    .field input {
+      width: 100%;
+      height: 46px;
+      padding: 0 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      outline: none;
+      background: linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.02)), rgba(0,0,0,.32);
+      font-size: 14px;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .field input::placeholder { color: rgba(255,255,255,.35); }
+    .field input:focus { border-color: rgba(255,255,255,.46); background: rgba(0,0,0,.38); box-shadow: 0 0 0 3px rgba(255,255,255,.035); }
+    .error { display: block; min-height: 16px; margin: 4px 0 0 13px; color: #ffad86; font-size: 11px; }
+    .form-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+    .summary { color: var(--ink-secondary); font-size: 13px; }
+    .cta {
+      padding: 13px 28px;
+      border: 1px solid rgba(255,220,197,.42);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ee955d, var(--accent));
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px -6px rgba(232,112,42,.38), inset 0 1px rgba(255,255,255,.42);
+      transition: transform 100ms ease-out, background .2s ease, box-shadow .3s ease, opacity .2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cta:hover:not(:disabled) { background: linear-gradient(135deg, #f3a271, var(--accent-hover)); box-shadow: 0 12px 32px -8px rgba(232,112,42,.58), inset 0 1px rgba(255,255,255,.5); }
+    .cta:active:not(:disabled) { transform: scale(.96); }
+    .cta:disabled { opacity: .42; cursor: not-allowed; }
+
+    .done { padding: 22px 8px 8px; text-align: center; }
+    .done-icon { display: grid; width: 64px; height: 64px; place-items: center; margin: 0 auto 16px; border: 1px solid rgba(232,112,42,.5); border-radius: 50%; background: rgba(232,112,42,.15); }
+    .done h2 { margin: 0 0 8px; font-size: 27px; font-weight: 600; letter-spacing: -.04em; }
+    .done p { margin: 0 auto 20px; color: var(--ink-secondary); }
+    .ghost {
+      padding: 11px 23px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 100ms ease-out, background .2s ease;
+    }
+    .ghost:hover { background: rgba(255,255,255,.15); }
+    .ghost:active { transform: scale(.96); }
+
+    .admin-demo { margin-top: 14px; }
+    .admin-demo summary {
+      width: fit-content;
+      margin: 0 auto;
+      padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 999px;
+      color: var(--ink-muted);
+      cursor: pointer;
+      font-size: 10px;
+      list-style: none;
+      text-align: center;
+    }
+    .admin-demo summary::-webkit-details-marker { display: none; }
+    .admin-demo[open] summary { margin-bottom: 10px; border-color: rgba(255,255,255,.2); color: var(--ink-secondary); }
+    .admin-content {
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 18px;
+      background: rgba(14,14,14,.88);
+    }
+    .admin-note { margin: 0 0 10px; color: var(--ink-muted); font-size: 10px; text-align: center; }
+    .booking-list { display: grid; gap: 7px; }
+    .booking-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(255,255,255,.025); }
+    .booking-meta { min-width: 0; }
+    .booking-meta strong { display: block; overflow: hidden; font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+    .booking-meta span { display: block; margin-top: 2px; color: var(--ink-muted); font-size: 10px; }
+    .booking-actions { display: flex; flex: 0 0 auto; gap: 5px; }
+    .mini-action { padding: 6px 9px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: transparent; color: var(--ink-secondary); cursor: pointer; font-size: 9px; }
+    .mini-action:hover:not(:disabled) { background: rgba(255,255,255,.09); }
+    .mini-action.delete { border-color: rgba(255,130,100,.24); color: #ffb49e; }
+    .mini-action:disabled { opacity: .44; cursor: not-allowed; }
+    .booking-row.cancelled { opacity: .5; }
+    .note { margin: 13px 0 0; color: var(--ink-muted); font-size: 10px; text-align: center; }
+
+    @keyframes reveal { from { opacity: 0; transform: translateY(20px); filter: blur(10px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-hero { animation: reveal .95s var(--ease) both; }
+    .animate-card { animation: rise .85s var(--ease) .15s both; }
+
+    @media (max-width: 900px) { .hero-art { right: -52px; width: 120px; opacity: .42; } }
+    @media (max-width: 680px) {
+      nav { padding-right: 15px; padding-left: 15px; }
+      .brand { gap: 8px; font-size: 18px; }
+      .brand svg { width: 22px; height: 22px; }
+      .hours { padding: 7px 12px; font-size: 10px; }
+      main { padding: max(104px, calc(env(safe-area-inset-top) + 90px)) 14px 40px; }
+      .hero { margin-bottom: 23px; }
+      .hero-art { display: none; }
+      h1 { font-size: clamp(39px, 10vw, 58px); }
+      .subtitle { max-width: 340px; font-size: 13px; }
+      .booking-card { border-radius: 25px; }
+      .step { margin-bottom: 21px; }
+      .fields { grid-template-columns: 1fr; gap: 5px; }
+      .form-bar { align-items: stretch; flex-direction: column; }
+      .summary { min-height: 20px; }
+      .cta { width: 100%; }
+    }
+    @media (max-width: 390px) {
+      .hours { padding: 6px 9px; font-size: 9px; }
+      .chip { padding-right: 12px; padding-left: 12px; }
+      .day { min-width: 54px; flex-basis: 54px; }
+      .slots { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 7px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .animate-hero, .animate-card { animation: none; }
+      .pill, .cta, .ghost { transition: none; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .glass { border-color: rgba(255,255,255,.3); background: rgba(28,28,30,.96); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    }
+    @media (prefers-contrast: more) {
+      .glass, .pill, .field input { border-color: rgba(255,255,255,.62); }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="bg-spot" id="spot" aria-hidden="true"></div>
+
+  <nav aria-label="Шапка страницы">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 256 256" fill="#fff" aria-hidden="true">
+        <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
+      </svg>
+      <span class="serif brand-name">kamidere</span>
+    </div>
+    <div class="hours glass" id="hours"></div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <h1 class="animate-hero" id="page-title">
+        <span class="serif headline-first">Запишитесь</span>
+        <span class="headline-second">на удобное время</span>
+      </h1>
+      <p class="subtitle animate-hero">Выберите услугу, день и время. Свободные окошки обновятся автоматически.</p>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orbit"></div>
+        <svg class="tesseract" id="tesseract" viewBox="0 0 300 300" focusable="false">
+          <defs>
+            <linearGradient id="tesseract-stroke" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#e8702a" />
+              <stop offset=".48" stop-color="#fff0e4" />
+              <stop offset="1" stop-color="#ffd0ad" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </header>
+
+    <section class="booking-card animate-card" aria-label="Форма онлайн-записи">
+      <div id="booking-flow">
+        <section class="step" aria-labelledby="service-heading">
+          <h2 class="step-heading" id="service-heading"><span>Услуга</span></h2>
+          <div class="row" id="services" role="group" aria-label="Услуга"></div>
+        </section>
+
+        <section class="step" aria-labelledby="date-heading">
+          <h2 class="step-heading" id="date-heading"><span>День</span><em id="selected-day-label"></em></h2>
+          <div class="days" id="days" role="group" aria-label="Выберите день"></div>
+        </section>
+
+        <section class="step" aria-labelledby="time-heading">
+          <h2 class="step-heading" id="time-heading"><span>Время</span><em id="slot-count"></em></h2>
+          <div class="slots" id="slots" role="group" aria-label="Свободное время"></div>
+          <p class="slot-note">Показываем только свободные окошки · шаг 30 минут</p>
+        </section>
+
+        <form id="booking-form" novalidate>
+          <div class="fields">
+            <div class="field">
+              <label for="client-name">Имя</label>
+              <input id="client-name" autocomplete="name" placeholder="Как к вам обращаться" />
+              <span class="error" id="name-error" aria-live="polite"></span>
+            </div>
+            <div class="field">
+              <label for="client-phone">Телефон</label>
+              <input id="client-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 900 000 00 00" />
+              <span class="error" id="phone-error" aria-live="polite"></span>
+            </div>
+          </div>
+          <div class="form-bar">
+            <div class="summary" id="summary" aria-live="polite">Выберите услугу и время</div>
+            <button class="cta glass" id="submit-booking" type="submit" disabled>Записаться</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="done" id="done" hidden>
+        <div class="done-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8702a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+        </div>
+        <h2>Вы записаны</h2>
+        <p id="done-text"></p>
+        <button class="ghost" id="book-another" type="button">Новая запись</button>
+      </div>
+    </section>
+
+    <details class="admin-demo">
+      <summary>Демо: управление заявками</summary>
+      <div class="admin-content">
+        <p class="admin-note">Отмена или удаление освобождает время для следующего клиента.</p>
+        <div class="booking-list" id="booking-list" aria-live="polite"></div>
+      </div>
+    </details>
+    <p class="note" id="availability-note"></p>
+    <p class="note">Превью-макет · тестовые заявки не отправляются в базу</p>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var CONFIG = { open: 9 * 60, close: 21 * 60, step: 30, maxDays: 30 };
+      var SERVICES = [
+        { id: 'manicure', name: 'Маникюр', minutes: 30 },
+        { id: 'coating', name: 'Маникюр с покрытием', minutes: 60 },
+        { id: 'combined', name: 'Маникюр и педикюр', minutes: 90 }
+      ];
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+      var dayList = Array.from({ length: CONFIG.maxDays + 1 }, function (_, index) {
+        var date = new Date(today);
+        date.setDate(date.getDate() + index);
+        return date;
+      });
+      var now = new Date();
+      var initialOffset = now.getHours() * 60 + now.getMinutes() >= CONFIG.close ? 1 : 0;
+      var state = { service: SERVICES[0], day: toIsoDate(dayList[initialOffset]), time: null };
+      var bookings = [];
+      var tesseract = document.getElementById('tesseract');
+      var vertices = [];
+      var edges = [];
+      var edgeElements = [];
+      var vertexElements = [];
+      var rotationX = -0.38;
+      var rotationY = -0.58;
+      var rotationXW = -0.34;
+      var rotationYW = 0.28;
+      var targetRotationXW = rotationXW;
+      var targetRotationYW = rotationYW;
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      function toIsoDate(date) {
+        return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+      }
+
+      function fromIsoDate(value) {
+        var parts = value.split('-').map(Number);
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+      }
+
+      function formatTime(minutes) {
+        return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
+      }
+
+      function formatLongDate(value) {
+        return fromIsoDate(value).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+      }
+
+      function formatShortDate(value) {
+        return fromIsoDate(value).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '');
+      }
+
+      function makeElement(tag, className, text) {
+        var element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text != null) element.textContent = text;
+        return element;
+      }
+
+      function seedDayBookings(day) {
+        var dayStart = fromIsoDate(day);
+        dayStart.setHours(12, 0, 0, 0);
+        var todayAtNoon = new Date(today);
+        todayAtNoon.setHours(12, 0, 0, 0);
+        var offset = Math.floor((dayStart.getTime() - todayAtNoon.getTime()) / 86400000);
+        return [
+          { id: 'sample-' + day + '-1', name: 'Запись · пример', service: 'Маникюр', day: day, start: 600 + (offset % 3) * 30, duration: 30, status: 'confirmed', sample: true },
+          { id: 'sample-' + day + '-2', name: 'Запись · пример', service: 'Маникюр с покрытием', day: day, start: 810 + (offset % 3) * 30, duration: 60, status: 'new', sample: true },
+          { id: 'sample-' + day + '-3', name: 'Запись · пример', service: 'Маникюр', day: day, start: 1020 + (offset % 4) * 30, duration: 30, status: 'confirmed', sample: true }
+        ];
+      }
+
+      dayList.forEach(function (date) {
+        bookings.push.apply(bookings, seedDayBookings(toIsoDate(date)));
+      });
+
+      function activeBookings(day) {
+        return bookings.filter(function (booking) {
+          return booking.day === day && booking.status !== 'cancelled';
+        });
+      }
+
+      function isOccupied(start, duration, day) {
+        return activeBookings(day).some(function (booking) {
+          return start < booking.start + booking.duration && start + duration > booking.start;
+        });
+      }
+
+      function availableSlots(day, duration) {
+        var nowTime = new Date();
+        var isToday = day === toIsoDate(nowTime);
+        var nowMinutes = nowTime.getHours() * 60 + nowTime.getMinutes();
+        var slots = [];
+        for (var time = CONFIG.open; time + duration <= CONFIG.close; time += CONFIG.step) {
+          if (isToday && time <= nowMinutes) continue;
+          if (!isOccupied(time, duration, day)) slots.push(time);
+        }
+        return slots;
+      }
+
+      function renderServices() {
+        var container = document.getElementById('services');
+        container.replaceChildren();
+        SERVICES.forEach(function (service) {
+          var button = makeElement('button', 'pill chip');
+          var name = makeElement('span', '', service.name);
+          var duration = makeElement('small', '', service.minutes + ' мин');
+          button.type = 'button';
+          button.dataset.service = service.id;
+          button.classList.toggle('glass', service.id === state.service.id);
+          button.setAttribute('aria-pressed', String(service.id === state.service.id));
+          button.append(name, duration);
+          button.addEventListener('click', function () {
+            state.service = service;
+            state.time = null;
+            render();
+          });
+          container.appendChild(button);
+        });
+      }
+
+      function renderDays() {
+        var container = document.getElementById('days');
+        var scrollPosition = container.scrollLeft;
+        container.replaceChildren();
+        dayList.forEach(function (date, index) {
+          var key = toIsoDate(date);
+          var dayButton = makeElement('button', 'pill day');
+          var weekday = makeElement('span', 'weekday', date.toLocaleDateString('ru-RU', { weekday: 'short' }));
+          var number = makeElement('span', 'number', String(date.getDate()));
+          var monthText = index === 0 || date.getDate() === 1
+            ? date.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '')
+            : '';
+          var month = makeElement('span', 'month', monthText);
+          dayButton.type = 'button';
+          dayButton.dataset.date = key;
+          dayButton.classList.toggle('glass', key === state.day);
+          dayButton.setAttribute('aria-pressed', String(key === state.day));
+          dayButton.setAttribute('aria-label', formatLongDate(key));
+          dayButton.append(weekday, number, month);
+          dayButton.addEventListener('click', function () {
+            state.day = key;
+            state.time = null;
+            render();
+          });
+          container.appendChild(dayButton);
+        });
+        container.scrollLeft = scrollPosition;
+        var selectedDay = container.querySelector('[aria-pressed="true"]');
+        if (selectedDay && selectedDay.offsetLeft < container.scrollLeft) {
+          container.scrollLeft = selectedDay.offsetLeft - 8;
+        } else if (selectedDay && selectedDay.offsetLeft + selectedDay.offsetWidth > container.scrollLeft + container.clientWidth) {
+          container.scrollLeft = selectedDay.offsetLeft - container.clientWidth + selectedDay.offsetWidth + 8;
+        }
+        document.getElementById('selected-day-label').textContent = formatLongDate(state.day);
+      }
+
+      function renderSlots() {
+        var container = document.getElementById('slots');
+        var slots = availableSlots(state.day, state.service.minutes);
+        container.replaceChildren();
+        slots.forEach(function (time) {
+          var button = makeElement('button', 'pill slot', formatTime(time));
+          button.type = 'button';
+          button.dataset.time = String(time);
+          button.classList.toggle('glass', time === state.time);
+          button.setAttribute('aria-pressed', String(time === state.time));
+          button.setAttribute('aria-label', formatTime(time) + '–' + formatTime(time + state.service.minutes));
+          button.addEventListener('click', function () {
+            state.time = time;
+            render();
+          });
+          container.appendChild(button);
+        });
+        if (!slots.length) {
+          container.appendChild(makeElement('p', 'empty', 'На этот день свободного времени нет. Выберите другой день.'));
+        }
+        document.getElementById('slot-count').textContent = slots.length ? 'свободно: ' + slots.length : '';
+      }
+
+      function renderBookings() {
+        var container = document.getElementById('booking-list');
+        var dayBookings = bookings.filter(function (booking) { return booking.day === state.day; });
+        container.replaceChildren();
+        if (!dayBookings.length) {
+          container.appendChild(makeElement('p', 'empty', 'На этот день заявок нет.'));
+          return;
+        }
+        dayBookings.forEach(function (booking) {
+          var row = makeElement('div', 'booking-row' + (booking.status === 'cancelled' ? ' cancelled' : ''));
+          var info = makeElement('div', 'booking-meta');
+          var name = makeElement('strong', '', booking.name + (booking.status === 'cancelled' ? ' · отменена' : ''));
+          var detail = makeElement('span', '', formatTime(booking.start) + ' · ' + booking.service + ' · ' + booking.duration + ' мин');
+          var actions = makeElement('div', 'booking-actions');
+          var cancel = makeElement('button', 'mini-action', booking.status === 'cancelled' ? 'Отменена' : 'Отменить');
+          var remove = makeElement('button', 'mini-action delete', 'Удалить');
+          cancel.type = 'button';
+          cancel.disabled = booking.status === 'cancelled';
+          cancel.addEventListener('click', function () {
+            booking.status = 'cancelled';
+            render();
+          });
+          remove.type = 'button';
+          remove.addEventListener('click', function () {
+            bookings = bookings.filter(function (item) { return item.id !== booking.id; });
+            render();
+          });
+          info.append(name, detail);
+          actions.append(cancel, remove);
+          row.append(info, actions);
+          container.appendChild(row);
+        });
+      }
+
+      function renderSummary() {
+        var summary = document.getElementById('summary');
+        var submit = document.getElementById('submit-booking');
+        if (state.time === null) {
+          summary.textContent = 'Выберите время';
+          submit.disabled = true;
+          return;
+        }
+        summary.textContent = state.service.name + ', ' + formatShortDate(state.day) + ', ' + formatTime(state.time) + '–' + formatTime(state.time + state.service.minutes);
+        submit.disabled = false;
+      }
+
+      function render() {
+        renderServices();
+        renderDays();
+        renderSlots();
+        renderBookings();
+        renderSummary();
+      }
+
+      function rotateInPlane(point, firstAxis, secondAxis, angle) {
+        var cosine = Math.cos(angle);
+        var sine = Math.sin(angle);
+        var first = point[firstAxis];
+        var second = point[secondAxis];
+        point[firstAxis] = first * cosine - second * sine;
+        point[secondAxis] = first * sine + second * cosine;
+      }
+
+      function renderTesseract() {
+        var points = vertices.map(function (vertex) {
+          var point = vertex.slice();
+          rotateInPlane(point, 0, 1, rotationY * .52);
+          rotateInPlane(point, 0, 2, rotationX);
+          rotateInPlane(point, 1, 2, rotationY);
+          rotateInPlane(point, 0, 3, rotationXW);
+          rotateInPlane(point, 1, 3, rotationYW);
+          rotateInPlane(point, 2, 3, rotationXW * .35);
+          var perspective4d = 2.8 / (2.8 - point[3]);
+          var x = point[0] * perspective4d;
+          var y = point[1] * perspective4d;
+          var z = point[2] * perspective4d;
+          var perspective3d = 4.2 / (4.2 - z);
+          var scale = 42;
+          return { x: 150 + x * perspective3d * scale, y: 150 - y * perspective3d * scale, depth: z + point[3] * .45 };
+        });
+        edges.forEach(function (edge, index) {
+          var start = points[edge[0]];
+          var end = points[edge[1]];
+          var line = edgeElements[index];
+          line.setAttribute('x1', start.x.toFixed(2));
+          line.setAttribute('y1', start.y.toFixed(2));
+          line.setAttribute('x2', end.x.toFixed(2));
+          line.setAttribute('y2', end.y.toFixed(2));
+          line.style.opacity = String(.55 + Math.max(-1, Math.min(1, (start.depth + end.depth) * .2)) * .22);
+        });
+        points.forEach(function (point, index) {
+          var circle = vertexElements[index];
+          circle.setAttribute('cx', point.x.toFixed(2));
+          circle.setAttribute('cy', point.y.toFixed(2));
+          circle.style.opacity = String(.58 + Math.max(-1, Math.min(1, point.depth * .22)) * .32);
+        });
+      }
+
+      for (var bits = 0; bits < 16; bits += 1) {
+        vertices.push([bits & 1 ? 1 : -1, bits & 2 ? 1 : -1, bits & 4 ? 1 : -1, bits & 8 ? 1 : -1]);
+      }
+      for (var a = 0; a < 16; a += 1) {
+        for (var axis = 0; axis < 4; axis += 1) {
+          var b = a ^ (1 << axis);
+          if (a < b) edges.push([a, b]);
+        }
+      }
+      edges.forEach(function () {
+        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tesseract.appendChild(line);
+        edgeElements.push(line);
+      });
+      vertices.forEach(function () {
+        var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('r', '2.5');
+        tesseract.appendChild(circle);
+        vertexElements.push(circle);
+      });
+      renderTesseract();
+
+      function animateTesseract() {
+        if (reduceMotion.matches) return;
+        rotationXW += (targetRotationXW - rotationXW) * .045 + .0012;
+        rotationYW += (targetRotationYW - rotationYW) * .045 + .001;
+        renderTesseract();
+        window.requestAnimationFrame(animateTesseract);
+      }
+      if (!reduceMotion.matches) window.requestAnimationFrame(animateTesseract);
+
+      document.getElementById('booking-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var nameInput = document.getElementById('client-name');
+        var phoneInput = document.getElementById('client-phone');
+        var name = nameInput.value.trim();
+        var digits = phoneInput.value.replace(/\D/g, '');
+        document.getElementById('name-error').textContent = name.length < 2 ? 'Введите имя' : '';
+        document.getElementById('phone-error').textContent = digits.length < 10 ? 'Введите номер телефона полностью' : '';
+        if (name.length < 2 || digits.length < 10 || state.time === null) return;
+        if (!dayList.some(function (date) { return toIsoDate(date) === state.day; }) ||
+            !availableSlots(state.day, state.service.minutes).includes(state.time)) {
+          state.time = null;
+          render();
+          return;
+        }
+        var start = state.time;
+        var duration = state.service.minutes;
+        var serviceName = state.service.name;
+        var selectedDate = state.day;
+        bookings.push({
+          id: 'client-' + Date.now(),
+          name: name,
+          service: serviceName,
+          day: selectedDate,
+          start: start,
+          duration: duration,
+          status: 'new',
+          sample: false
+        });
+        document.getElementById('done-text').textContent = name + ', ' + serviceName.toLowerCase() + ': ' + formatLongDate(selectedDate) + ', ' + formatTime(start) + '–' + formatTime(start + duration) + '.';
+        state.time = null;
+        document.getElementById('booking-flow').hidden = true;
+        document.getElementById('done').hidden = false;
+        render();
+      });
+
+      document.getElementById('book-another').addEventListener('click', function () {
+        document.getElementById('booking-form').reset();
+        document.getElementById('name-error').textContent = '';
+        document.getElementById('phone-error').textContent = '';
+        document.getElementById('done').hidden = true;
+        document.getElementById('booking-flow').hidden = false;
+        state.time = null;
+        render();
+      });
+
+      if (window.matchMedia('(pointer: fine)').matches && !reduceMotion.matches) {
+        var mouseX = -999;
+        var mouseY = -999;
+        var smoothX = -999;
+        var smoothY = -999;
+        document.addEventListener('pointermove', function (event) {
+          if (event.pointerType !== 'mouse') return;
+          mouseX = event.clientX;
+          mouseY = event.clientY;
+          if (smoothX < 0) {
+            smoothX = mouseX;
+            smoothY = mouseY;
+          }
+          var heroBounds = document.querySelector('.hero').getBoundingClientRect();
+          var localX = (event.clientX - heroBounds.left) / heroBounds.width;
+          var localY = (event.clientY - heroBounds.top) / heroBounds.height;
+          if (localX >= 0 && localX <= 1 && localY >= 0 && localY <= 1) {
+            targetRotationYW = .28 + (localX - .5) * .34;
+            targetRotationXW = -.34 + (localY - .5) * .28;
+          } else {
+            targetRotationYW = .28;
+            targetRotationXW = -.34;
+          }
+        });
+        (function followPointer() {
+          smoothX += (mouseX - smoothX) * .1;
+          smoothY += (mouseY - smoothY) * .1;
+          document.getElementById('spot').style.setProperty('--spot-x', smoothX + 'px');
+          document.getElementById('spot').style.setProperty('--spot-y', smoothY + 'px');
+          window.requestAnimationFrame(followPointer);
+        }());
+      }
+
+      document.getElementById('hours').textContent = 'Ежедневно ' + formatTime(CONFIG.open) + '–' + formatTime(CONFIG.close);
+      document.getElementById('availability-note').textContent = 'Время работы ' + formatTime(CONFIG.open) + '–' + formatTime(CONFIG.close) + ' · запись открыта на ' + CONFIG.maxDays + ' дней вперёд';
+      render();
+    }());
+  </script>
+</body>
+</html>

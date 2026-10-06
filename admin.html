@@ -454,6 +454,10 @@
         const carHtml = b.car_info
           ? '<div class="booking-meta"><span>🚗 ' + App.escapeHtml(b.car_info) + '</span></div>'
           : '';
+        const duration = Number(b.service_duration_minutes);
+        const durationHtml = Number.isInteger(duration) && duration > 0
+          ? '<span>⏱ ' + duration + ' мин</span>'
+          : '';
 
         return ''
           + '<div class="booking-card status-' + status + '" data-id="' + App.escapeHtml(b.id) + '">'
@@ -467,6 +471,7 @@
           +   '<div class="booking-meta">'
           +     '<span>📅 ' + dt + '</span>'
           +     (b.service_name ? '<span>✂ ' + App.escapeHtml(b.service_name) + '</span>' : '')
+          +     durationHtml
           +   '</div>'
           +   carHtml
           +   noteHtml
