@@ -11,7 +11,10 @@
     radial-gradient(ellipse at 74% 12%, rgba(255, 255, 255, .055), transparent 34%),
     #000;
   color: #fff;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 .booking-page .page {
@@ -36,6 +39,14 @@
   min-height: 76px;
   padding-top: 14px;
   padding-bottom: 14px;
+}
+
+.booking-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .booking-page .topbar-brand {
@@ -106,7 +117,7 @@
   color: #f5f5f5;
   font-size: clamp(44px, 7vw, 92px);
   font-weight: 500;
-  letter-spacing: -.075em;
+  letter-spacing: -.055em;
   line-height: .97;
 }
 
@@ -149,6 +160,21 @@
   aspect-ratio: 1;
   perspective: 900px;
   transform: translateY(-50%);
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.showcase-glass:active {
+  cursor: grabbing;
+}
+
+.showcase-glass.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.showcase-glass.is-dragging .glass-cube {
+  will-change: transform;
 }
 
 .glass-orbit {
@@ -166,9 +192,13 @@
   left: 50%;
   width: 64%;
   height: 64%;
-  transform: translate(-50%, -50%) rotateX(-22deg) rotateY(-34deg) rotateZ(13deg);
+  transform:
+    translate(-50%, -50%)
+    rotateX(var(--cube-rotate-x, -22deg))
+    rotateY(var(--cube-rotate-y, -34deg))
+    rotateZ(var(--cube-rotate-z, 13deg));
   transform-style: preserve-3d;
-  animation: bookingCubeFloat 8s ease-in-out infinite;
+  will-change: transform;
 }
 
 .cube-face {
@@ -189,11 +219,6 @@
 .cube-left { transform: rotateY(-90deg) translateZ(var(--cube-depth)); }
 .cube-top { transform: rotateX(90deg) translateZ(var(--cube-depth)); }
 .cube-bottom { transform: rotateX(-90deg) translateZ(var(--cube-depth)); }
-
-@keyframes bookingCubeFloat {
-  0%, 100% { transform: translate(-50%, -50%) rotateX(-22deg) rotateY(-34deg) rotateZ(13deg); }
-  50% { transform: translate(-50%, calc(-50% - 9px)) rotateX(-13deg) rotateY(7deg) rotateZ(5deg); }
-}
 
 .booking-page .banner {
   min-height: 164px;
@@ -283,11 +308,18 @@
   border-color: rgba(255, 255, 255, .14);
   border-radius: 5px;
   background: linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .015) 60%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .booking-page .service-card:hover {
   border-color: rgba(255, 255, 255, .55);
   box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
+}
+
+.booking-page .service-card:active {
+  transform: scale(.99);
+  transition-duration: .1s;
 }
 
 .booking-page .service-card.is-selected {
@@ -397,7 +429,7 @@
 }
 
 .booking-page .btn {
-  min-height: 40px;
+  min-height: 44px;
   border-color: rgba(255, 255, 255, .36);
   border-radius: 4px;
   background: transparent;
@@ -483,6 +515,152 @@
   color: rgba(255, 255, 255, .61);
 }
 
+.booking-page .install-button {
+  display: inline-flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .065);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.booking-page .install-button[hidden] {
+  display: none;
+}
+
+.booking-page .install-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.booking-page .install-button:hover {
+  border-color: rgba(255, 255, 255, .58);
+  background: rgba(255, 255, 255, .12);
+}
+
+.booking-page .install-button:active {
+  transform: scale(.97);
+}
+
+.booking-page .install-button:focus-visible,
+.booking-page .install-close:focus-visible,
+.booking-page .service-card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.install-dialog {
+  width: min(440px, calc(100% - 32px));
+  max-width: none;
+  max-height: min(90vh, 680px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .65);
+}
+
+.install-dialog::backdrop {
+  background: rgba(0, 0, 0, .68);
+  backdrop-filter: blur(10px);
+}
+
+.install-dialog[open] {
+  animation: installDialogIn .22s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes installDialogIn {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.install-dialog-card {
+  padding: clamp(23px, 6vw, 32px);
+}
+
+.install-dialog-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 23px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .08);
+  font-size: 20px;
+}
+
+.install-kicker {
+  margin: 0 0 7px;
+  color: rgba(255, 255, 255, .62);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .035em;
+}
+
+.install-dialog-card h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.16;
+}
+
+.install-description {
+  margin: 12px 0 16px;
+  color: rgba(255, 255, 255, .72);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.install-steps {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding-left: 20px;
+  color: rgba(255, 255, 255, .83);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.install-steps li::marker {
+  color: rgba(255, 255, 255, .5);
+}
+
+.install-close {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 23px;
+  border: 0;
+  border-radius: 7px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .16s ease, opacity .16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.install-close:active {
+  transform: scale(.98);
+}
+
 .booking-page #toast-container .toast {
   border-color: rgba(255, 255, 255, .2);
   background: #101010;
@@ -490,7 +668,7 @@
 
 @media (max-width: 640px) {
   .booking-page .topbar-inner {
-    min-height: 64px;
+    min-height: 68px;
   }
 
   .booking-showcase {
@@ -508,7 +686,7 @@
   }
 
   .showcase-copy {
-    max-width: 76%;
+    max-width: 78%;
   }
 
   .showcase-kicker {
@@ -518,7 +696,7 @@
   }
 
   .showcase-copy h1 {
-    font-size: clamp(42px, 12vw, 59px);
+    font-size: clamp(34px, 9.2vw, 44px);
   }
 
   .showcase-caption {
@@ -570,10 +748,54 @@
   .booking-page .section-step {
     font-size: 9px;
   }
+
+  .booking-page .install-button {
+    min-height: 44px;
+    gap: 7px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .booking-page .install-button svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glass-cube {
-    animation: none;
+  .booking-page *,
+  .booking-page *::before,
+  .booking-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .booking-page .topbar {
+    background: #000;
+    backdrop-filter: none;
+  }
+
+  .booking-page .card,
+  .booking-page .service-card,
+  .booking-page .thankyou {
+    background: #090909;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .booking-page .card,
+  .booking-page .service-card,
+  .booking-page .install-button,
+  .install-dialog {
+    border-color: rgba(255, 255, 255, .58);
+  }
+
+  .booking-page .muted,
+  .booking-page .service-meta,
+  .booking-page .service-desc {
+    color: rgba(255, 255, 255, .78);
   }
 }

@@ -13,7 +13,7 @@
     radial-gradient(ellipse at 78% 0%, rgba(255, 255, 255, .055), transparent 34%),
     var(--bg, #050505);
   color: #f4f4f4;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
 }
 

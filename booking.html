@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#000000" id="theme-color-meta" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Онлайн-запись" />
   <title>Онлайн-запись</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" id="site-icon" />
+  <link rel="apple-touch-icon" href="icon.svg" id="apple-touch-icon" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="booking-theme.css" />
+  <link rel="stylesheet" href="booking-theme.css?v=2" />
 </head>
 <body class="booking-page">
   <div class="page">
@@ -19,10 +20,16 @@
     <!-- ============ TOPBAR ============ -->
     <header class="topbar">
       <div class="container topbar-inner">
-        <div class="topbar-brand" id="brand">
-          <span class="dot"></span>
-          <img id="brand-logo" class="hidden" alt="" />
-          <span id="brand-name">Загрузка…</span>
+        <div class="booking-header">
+          <div class="topbar-brand" id="brand">
+            <span class="dot"></span>
+            <img id="brand-logo" class="hidden" alt="" />
+            <span id="brand-name">Загрузка…</span>
+          </div>
+          <button class="install-button" id="install-app" type="button" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span>На экран</span>
+          </button>
         </div>
       </div>
     </header>
@@ -90,7 +97,9 @@
 
               <div class="field">
                 <label for="bf-phone">Телефон *</label>
-                <input class="input" id="bf-phone" type="tel" placeholder="+7 (___) ___-__-__" required />
+                <input class="input" id="bf-phone" type="tel" inputmode="tel" autocomplete="tel"
+                       placeholder="+7 (___) ___-__-__" maxlength="18" required />
+                <span class="field-hint">Код +7 подставлен автоматически. Введите номер начиная с 8 или 9.</span>
               </div>
 
               <div class="row-2">
@@ -152,6 +161,21 @@
     </footer>
   </div>
 
+    <dialog class="install-dialog" id="install-dialog" aria-labelledby="install-dialog-title">
+      <div class="install-dialog-card">
+        <div class="install-dialog-mark" aria-hidden="true">↗</div>
+        <p class="install-kicker">Быстрый доступ</p>
+        <h2 id="install-dialog-title">Добавить на главный экран</h2>
+        <p class="install-description">Откройте меню браузера и выберите подходящий пункт:</p>
+        <ul class="install-steps" id="install-steps">
+          <li>iPhone или iPad: нажмите «Поделиться», затем «На экран Домой».</li>
+          <li>Android: откройте меню браузера и выберите «Установить приложение».</li>
+          <li>Компьютер: воспользуйтесь значком установки в адресной строке или меню браузера.</li>
+        </ul>
+        <button class="install-close" id="install-close" type="button">Понятно</button>
+      </div>
+    </dialog>
+
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
@@ -167,7 +191,10 @@
       slug: null,
       project: null,
       services: [],
-      selectedService: null
+      selectedService: null,
+      manifestUrl: null,
+      iconUrls: [],
+      installPrompt: null
     };
 
     // ============================================================
@@ -189,6 +216,7 @@
         }
         state.project = project;
         applyProject(project);
+        await configureWebApp(project);
         await loadServices();
         renderContacts(project);
         wireForm();
@@ -245,6 +273,143 @@
       }
     }
 
+    async function configureWebApp(project) {
+      const businessName = (project.business_name || 'Онлайн-запись').trim();
+      const logoUrl = project.logo_url || new URL('icon.svg', window.location.href).href;
+      const manifestLink = $('link[rel="manifest"]');
+      const appleIcon = $('#apple-touch-icon');
+      const siteIcon = $('#site-icon');
+      const themeColor = validThemeColor(project.background_color) || '#000000';
+      const appUrl = new URL('booking.html', window.location.href);
+      appUrl.searchParams.set('b', state.slug);
+      const scopeUrl = new URL('./', window.location.href);
+      const iconType = getImageMimeType(logoUrl);
+      const manifestIcons = await createInstallIcons(logoUrl, themeColor, iconType);
+
+      document.title = businessName + ' — запись онлайн';
+      document.querySelector('meta[name="apple-mobile-web-app-title"]').content =
+        businessName.slice(0, 30);
+      document.querySelector('meta[name="theme-color"]').content = themeColor;
+      appleIcon.href = logoUrl;
+      siteIcon.href = logoUrl;
+      siteIcon.type = iconType;
+      $('#install-app').setAttribute('aria-label', 'Добавить ' + businessName + ' на главный экран');
+      if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+        $('#install-app').hidden = true;
+      }
+
+      const manifest = {
+        id: appUrl.href,
+        name: businessName + ' — онлайн-запись',
+        short_name: businessName.slice(0, 20),
+        description: 'Запись на услуги ' + businessName,
+        start_url: appUrl.href,
+        scope: scopeUrl.href,
+        display: 'standalone',
+        display_override: ['standalone', 'minimal-ui'],
+        orientation: 'any',
+        background_color: themeColor,
+        theme_color: validThemeColor(project.accent_color) || themeColor,
+        lang: 'ru',
+        icons: manifestIcons
+      };
+
+      const manifestBlob = new Blob([JSON.stringify(manifest)], {
+        type: 'application/manifest+json'
+      });
+      if (state.manifestUrl) URL.revokeObjectURL(state.manifestUrl);
+      state.manifestUrl = URL.createObjectURL(manifestBlob);
+      manifestLink.href = state.manifestUrl;
+
+      if ('serviceWorker' in navigator && window.isSecureContext) {
+        try {
+          await navigator.serviceWorker.register(
+            new URL('service-worker.js', window.location.href),
+            { scope: scopeUrl.pathname }
+          );
+        } catch (error) {
+          console.error('Unable to register the booking app service worker.', error);
+        }
+      }
+    }
+
+    function validThemeColor(value) {
+      return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
+    }
+
+    function getImageMimeType(url) {
+      const pathname = new URL(url, window.location.href).pathname.toLowerCase();
+      if (pathname.endsWith('.svg')) return 'image/svg+xml';
+      if (pathname.endsWith('.webp')) return 'image/webp';
+      if (pathname.endsWith('.png')) return 'image/png';
+      if (pathname.endsWith('.gif')) return 'image/gif';
+      if (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg')) return 'image/jpeg';
+      if (pathname.endsWith('.avif')) return 'image/avif';
+      return 'image/png';
+    }
+
+    async function createInstallIcons(sourceUrl, backgroundColor, sourceType) {
+      state.iconUrls.forEach(function (url) { URL.revokeObjectURL(url); });
+      state.iconUrls = [];
+      let bitmap = null;
+
+      try {
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.src = sourceUrl;
+        await image.decode();
+        bitmap = await createImageBitmap(image);
+        const icons = [];
+
+        for (const size of [192, 512]) {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const context = canvas.getContext('2d');
+          const padding = size * 0.16;
+          const scale = Math.min(
+            (size - padding * 2) / bitmap.width,
+            (size - padding * 2) / bitmap.height
+          );
+          const width = bitmap.width * scale;
+          const height = bitmap.height * scale;
+          context.fillStyle = backgroundColor;
+          context.fillRect(0, 0, size, size);
+          context.drawImage(bitmap, (size - width) / 2, (size - height) / 2, width, height);
+
+          const iconBlob = await new Promise(function (resolve, reject) {
+            canvas.toBlob(function (blob) {
+              if (blob) resolve(blob);
+              else reject(new Error('The browser could not encode the app icon.'));
+            }, 'image/png');
+          });
+          const iconUrl = URL.createObjectURL(iconBlob);
+          state.iconUrls.push(iconUrl);
+          icons.push({
+            src: iconUrl,
+            sizes: size + 'x' + size,
+            type: 'image/png',
+            purpose: 'any'
+          });
+        }
+
+        bitmap.close();
+        bitmap = null;
+        return icons;
+      } catch (error) {
+        if (bitmap) bitmap.close();
+        state.iconUrls.forEach(function (url) { URL.revokeObjectURL(url); });
+        state.iconUrls = [];
+        console.error('Unable to prepare square app icons; using the uploaded business logo.', error);
+        return [{
+          src: sourceUrl,
+          sizes: 'any',
+          type: sourceType,
+          purpose: 'any'
+        }];
+      }
+    }
+
     // ============================================================
     // SERVICES
     // ============================================================
@@ -273,7 +438,7 @@
         const dur = (s.duration_minutes || 60) + ' мин';
 
         return ''
-          + '<div class="service-card" data-id="' + App.escapeHtml(s.id) + '">'
+          + '<div class="service-card" data-id="' + App.escapeHtml(s.id) + '" role="button" tabindex="0" aria-pressed="false">'
           +   '<div class="service-image">' + img + '</div>'
           +   '<div class="service-body">'
           +     '<div class="service-name">' + App.escapeHtml(s.name) + '</div>'
@@ -291,6 +456,11 @@
           const id = card.getAttribute('data-id');
           selectService(id);
         });
+        card.addEventListener('keydown', function (event) {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          selectService(card.getAttribute('data-id'));
+        });
       });
     }
 
@@ -300,7 +470,9 @@
       state.selectedService = svc;
 
       document.querySelectorAll('.service-card').forEach(function (c) {
-        c.classList.toggle('is-selected', c.getAttribute('data-id') === id);
+        const selected = c.getAttribute('data-id') === id;
+        c.classList.toggle('is-selected', selected);
+        c.setAttribute('aria-pressed', String(selected));
       });
 
       $('#form-section').style.display = 'block';
@@ -376,6 +548,8 @@
       const wh = state.project.work_hours || {};
       if (wh.start) $('#bf-time').value = wh.start;
 
+      wireRussianPhone();
+
       $('#bf-cancel').addEventListener('click', resetForm);
       $('#th-again').addEventListener('click', function () {
         $('#thankyou-section').style.display = 'none';
@@ -383,7 +557,10 @@
         $('#form-section').style.display = 'none';
         $('#contacts-section').style.display = '';
         state.selectedService = null;
-        document.querySelectorAll('.service-card').forEach(function (c) { c.classList.remove('is-selected'); });
+        document.querySelectorAll('.service-card').forEach(function (c) {
+          c.classList.remove('is-selected');
+          c.setAttribute('aria-pressed', 'false');
+        });
         resetForm();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
@@ -391,9 +568,189 @@
       $('#booking-form').addEventListener('submit', submitBooking);
     }
 
+    function wireRussianPhone() {
+      const input = $('#bf-phone');
+      input.value = '+7 ';
+      input.addEventListener('input', function (event) {
+        const oldValue = input.value;
+        const caret = input.selectionStart || oldValue.length;
+        const digitsBeforeCaret = oldValue.slice(0, caret).replace(/\D/g, '').length;
+
+        let digits = oldValue.replace(/\D/g, '');
+        const enteredDomesticPrefix = /^\+7\s*\(?8\)?$/.test(oldValue);
+        if (enteredDomesticPrefix) {
+          digits = '7';
+        } else if (/^\s*8/.test(oldValue)) {
+          digits = digits.slice(1);
+        } else if (/^\s*\+?7/.test(oldValue)) {
+          digits = digits.slice(1);
+        } else if (digits.length > 10 && digits.charAt(0) === '7') {
+          digits = digits.slice(1);
+        }
+
+        digits = digits.slice(0, 10);
+        if (digits && digits.charAt(0) !== '8' && digits.charAt(0) !== '9') {
+          digits = digits.slice(1);
+        }
+
+        let formatted = '+7';
+        if (digits.length) {
+          formatted += ' (' + digits.slice(0, 3);
+          if (digits.length >= 3) formatted += ')';
+          if (digits.length > 3) formatted += ' ' + digits.slice(3, 6);
+          if (digits.length > 6) formatted += '-' + digits.slice(6, 8);
+          if (digits.length > 8) formatted += '-' + digits.slice(8, 10);
+        } else {
+          formatted += ' ';
+        }
+
+        input.value = formatted;
+        if (!digits.length) {
+          input.setSelectionRange(formatted.length, formatted.length);
+          return;
+        }
+        const formattedDigitCount = formatted.replace(/\D/g, '').length;
+        const targetDigitCount = Math.max(
+          1,
+          Math.min(digitsBeforeCaret, formattedDigitCount)
+        );
+        let position = 0;
+        let seenDigits = 0;
+        while (position < formatted.length && seenDigits < targetDigitCount) {
+          if (/\d/.test(formatted.charAt(position))) seenDigits += 1;
+          position += 1;
+        }
+        input.setSelectionRange(position, position);
+      });
+    }
+
+    $('#install-app').addEventListener('click', async function () {
+      if (state.installPrompt) {
+        const prompt = state.installPrompt;
+        state.installPrompt = null;
+        try {
+          await prompt.prompt();
+          await prompt.userChoice;
+        } catch (error) {
+          console.error('Unable to open the browser installation prompt.', error);
+          $('#install-dialog').showModal();
+        }
+        return;
+      }
+      $('#install-dialog').showModal();
+    });
+
+    $('#install-close').addEventListener('click', function () {
+      $('#install-dialog').close();
+    });
+
+    $('#install-dialog').addEventListener('click', function (event) {
+      if (event.target === this) this.close();
+    });
+
+    const glassControl = document.querySelector('.showcase-glass');
+    const glassCube = document.querySelector('.glass-cube');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let glassPointerId = null;
+    let glassLastX = 0;
+    let glassLastY = 0;
+    let glassLastTime = 0;
+    let glassVelocityX = 0;
+    let glassVelocityY = 0;
+    let glassRotationX = -22;
+    let glassRotationY = -34;
+    let glassInertiaFrame = 0;
+
+    function renderGlassRotation() {
+      glassCube.style.setProperty('--cube-rotate-x', glassRotationX + 'deg');
+      glassCube.style.setProperty('--cube-rotate-y', glassRotationY + 'deg');
+    }
+
+    function stopGlassInertia() {
+      if (glassInertiaFrame) cancelAnimationFrame(glassInertiaFrame);
+      glassInertiaFrame = 0;
+    }
+
+    glassControl.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0) return;
+      stopGlassInertia();
+      glassPointerId = event.pointerId;
+      glassLastX = event.clientX;
+      glassLastY = event.clientY;
+      glassLastTime = performance.now();
+      glassVelocityX = 0;
+      glassVelocityY = 0;
+      glassControl.classList.add('is-dragging');
+      glassControl.setPointerCapture(event.pointerId);
+    });
+
+    glassControl.addEventListener('pointermove', function (event) {
+      if (event.pointerId !== glassPointerId) return;
+      const now = performance.now();
+      const elapsedFrames = Math.max((now - glassLastTime) / 16.667, 0.5);
+      const deltaX = event.clientX - glassLastX;
+      const deltaY = event.clientY - glassLastY;
+      glassRotationY += deltaX * 0.45;
+      glassRotationX -= deltaY * 0.45;
+      glassVelocityY = deltaX * 0.45 / elapsedFrames;
+      glassVelocityX = -deltaY * 0.45 / elapsedFrames;
+      glassLastX = event.clientX;
+      glassLastY = event.clientY;
+      glassLastTime = now;
+      renderGlassRotation();
+    });
+
+    function releaseGlass(event) {
+      if (event.pointerId !== glassPointerId) return;
+      glassControl.classList.remove('is-dragging');
+      if (glassControl.hasPointerCapture(event.pointerId)) {
+        glassControl.releasePointerCapture(event.pointerId);
+      }
+      glassPointerId = null;
+      if (prefersReducedMotion.matches) {
+        glassVelocityX = 0;
+        glassVelocityY = 0;
+        return;
+      }
+
+      let previousTime = performance.now();
+      function continueRotation(now) {
+        const elapsedFrames = Math.min((now - previousTime) / 16.667, 3);
+        previousTime = now;
+        glassRotationX += glassVelocityX * elapsedFrames;
+        glassRotationY += glassVelocityY * elapsedFrames;
+        const damping = Math.pow(0.94, elapsedFrames);
+        glassVelocityX *= damping;
+        glassVelocityY *= damping;
+        renderGlassRotation();
+
+        if (Math.abs(glassVelocityX) + Math.abs(glassVelocityY) < 0.02) {
+          glassInertiaFrame = 0;
+          return;
+        }
+        glassInertiaFrame = requestAnimationFrame(continueRotation);
+      }
+      glassInertiaFrame = requestAnimationFrame(continueRotation);
+    }
+
+    glassControl.addEventListener('pointerup', releaseGlass);
+    glassControl.addEventListener('pointercancel', releaseGlass);
+
+    window.addEventListener('beforeinstallprompt', function (event) {
+      event.preventDefault();
+      state.installPrompt = event;
+    });
+
+    window.addEventListener('appinstalled', function () {
+      state.installPrompt = null;
+      $('#install-app').setAttribute('aria-label', 'Приложение добавлено на главный экран');
+      $('#install-app').hidden = true;
+    });
+
     function resetForm() {
       const f = $('#booking-form');
       f.reset();
+      $('#bf-phone').value = '+7 ';
       const today = new Date().toISOString().slice(0, 10);
       $('#bf-date').value = today;
       const wh = state.project.work_hours || {};
@@ -408,14 +765,15 @@
 
       const name = $('#bf-name').value.trim();
       const phone = $('#bf-phone').value.trim();
+      const phoneDigits = phone.replace(/\D/g, '');
       const date = $('#bf-date').value;
       const time = $('#bf-time').value;
       const car = $('#bf-car').value.trim();
       const notes = $('#bf-notes').value.trim();
 
       if (!name) { App.toast('Укажите ваше имя', 'error'); $('#bf-name').focus(); return; }
-      if (!phone) { App.toast('Укажите телефон', 'error'); $('#bf-phone').focus(); return; }
-      if (!/^[\d\s+\-()]{5,}$/.test(phone)) {
+      if (phoneDigits.length < 11 || phoneDigits.charAt(0) !== '7' ||
+          (phoneDigits.charAt(1) !== '8' && phoneDigits.charAt(1) !== '9')) {
         App.toast('Проверьте формат телефона', 'error'); $('#bf-phone').focus(); return;
       }
       if (!date) { App.toast('Выберите дату', 'error'); $('#bf-date').focus(); return; }
