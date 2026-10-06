@@ -1,0 +1,600 @@
+/* ============================================================
+   styles.css — единый файл оформления.
+   Тема проекта задаётся через CSS-переменные --accent и --bg,
+   которые подставляются динамически из настроек проекта.
+   ============================================================ */
+
+/* ---------- 1. Переменные ---------- */
+:root {
+  --accent: #ef4444;
+  --bg: #0a0a0a;
+  --text: #f5f5f5;
+  --text-muted: #9ca3af;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-bg-solid: #141414;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-lg: 22px;
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --transition: 0.2s ease;
+  --container: 1100px;
+}
+
+/* ---------- 2. Reset ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- 3. Анимации ---------- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulseAccent {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.05); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-in { animation: fadeInUp 0.5s ease both; }
+.animate-in-delay-1 { animation: fadeInUp 0.5s ease 0.05s both; }
+.animate-in-delay-2 { animation: fadeInUp 0.5s ease 0.1s both; }
+.animate-in-delay-3 { animation: fadeInUp 0.5s ease 0.15s both; }
+
+/* ---------- 4. Layout ---------- */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-main { flex: 1; padding: 24px 0 60px; }
+
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.row-between { justify-content: space-between; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr; }
+.grid-3 { grid-template-columns: 1fr; }
+
+@media (min-width: 640px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---------- 5. Типографика ---------- */
+h1, h2, h3, h4 { margin: 0 0 12px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+h1 { font-size: clamp(24px, 4vw, 34px); }
+h2 { font-size: clamp(20px, 3vw, 26px); }
+h3 { font-size: 18px; }
+h4 { font-size: 16px; }
+
+.muted { color: var(--text-muted); }
+.small { font-size: 13px; }
+.tiny  { font-size: 12px; }
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 6. Кнопки ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform var(--transition), background var(--transition),
+              border-color var(--transition), box-shadow var(--transition);
+  user-select: none;
+  white-space: nowrap;
+}
+.btn:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--border-strong); }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.btn-primary:hover {
+  background: var(--accent);
+  filter: brightness(1.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.06); }
+
+.btn-danger { border-color: #7f1d1d; color: #fca5a5; background: rgba(127, 29, 29, 0.15); }
+.btn-danger:hover { background: rgba(127, 29, 29, 0.3); }
+
+.btn-block { width: 100%; }
+.btn-sm { padding: 6px 10px; font-size: 13px; }
+.btn-lg { padding: 14px 22px; font-size: 16px; }
+.btn-icon { padding: 8px; min-width: 36px; height: 36px; }
+
+/* ---------- 7. Поля ввода ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 11px 13px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.input::placeholder, .textarea::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.textarea { resize: vertical; min-height: 90px; }
+.select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%); background-position: calc(100% - 18px) center, calc(100% - 13px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
+
+.input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
+.input[type="file"] { padding: 8px; }
+
+.field-hint { font-size: 12px; color: var(--text-muted); }
+.field-error { font-size: 12px; color: #fca5a5; }
+
+/* ---------- 8. Карточки / glass ---------- */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+.card-solid { background: var(--card-bg-solid); }
+.card-lg { padding: 26px; }
+.card-title { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+.card-sub { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+/* ---------- 9. Баннер ---------- */
+.banner {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 40%, #000 60%));
+  display: flex;
+  align-items: center;
+  padding: 28px;
+  isolation: isolate;
+}
+.banner::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.35;
+  z-index: -1;
+}
+.banner-content { display: flex; align-items: center; gap: 18px; z-index: 1; }
+.banner-logo {
+  width: 76px; height: 76px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  flex-shrink: 0;
+}
+.banner-logo img { width: 100%; height: 100%; object-fit: cover; }
+.banner-title { font-size: clamp(20px, 3.4vw, 30px); font-weight: 800; letter-spacing: -0.02em; }
+.banner-sub { color: rgba(255, 255, 255, 0.85); margin-top: 4px; font-size: 14px; }
+
+.banner-compact { min-height: 160px; padding: 20px; }
+.banner-compact .banner-logo { width: 56px; height: 56px; border-radius: 14px; }
+
+/* ---------- 10. Список услуг ---------- */
+.services { display: grid; gap: 14px; }
+@media (min-width: 640px) { .services { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .services { grid-template-columns: repeat(3, 1fr); } }
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.service-card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+.service-card.is-selected { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+.service-image {
+  aspect-ratio: 16 / 10;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.service-image img { width: 100%; height: 100%; object-fit: cover; }
+.service-image .placeholder {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 34px;
+}
+
+.service-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.service-name { font-weight: 700; font-size: 15px; }
+.service-meta { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; }
+.service-price { color: var(--accent); font-weight: 700; }
+.service-desc { color: var(--text-muted); font-size: 13px; line-height: 1.4; }
+
+/* ---------- 11. Форма записи ---------- */
+.booking-form { display: flex; flex-direction: column; gap: 0; }
+.booking-form .row-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 560px) { .booking-form .row-2 { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- 12. Экран благодарности ---------- */
+.thankyou {
+  text-align: center;
+  padding: 48px 24px;
+  animation: fadeInUp 0.5s ease both;
+}
+.thankyou-icon {
+  width: 84px; height: 84px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  font-size: 40px;
+  animation: pulseAccent 2s ease-in-out infinite;
+}
+
+/* ---------- 13. Хедер / футер ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 12px 0;
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.topbar-brand img { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+.topbar-brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---------- 14. Вкладки ---------- */
+.tabs {
+  display: flex; gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  overflow-x: auto;
+}
+.tab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text); }
+.tab.is-active { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+
+.tab-panel { display: none; }
+.tab-panel.is-active { display: block; animation: fadeIn 0.25s ease both; }
+
+/* ---------- 15. Заявки (admin) ---------- */
+.bookings-grid { display: grid; gap: 14px; }
+@media (min-width: 720px) { .bookings-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .bookings-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.booking-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius);
+  animation: fadeInUp 0.4s ease both;
+}
+.booking-card.status-new       { border-left-color: #60a5fa; }
+.booking-card.status-confirmed { border-left-color: #34d399; }
+.booking-card.status-done      { border-left-color: #a3a3a3; opacity: 0.85; }
+.booking-card.status-cancelled { border-left-color: #f87171; opacity: 0.7; }
+
+.booking-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.booking-name { font-weight: 700; font-size: 15px; }
+.booking-phone { color: var(--text-muted); font-size: 13px; }
+.booking-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--text-muted); font-size: 13px; }
+.booking-note { font-size: 13px; color: var(--text); background: rgba(255, 255, 255, 0.03); padding: 8px 10px; border-radius: 8px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+.badge-new       { color: #bfdbfe; border-color: rgba(96, 165, 250, 0.4); background: rgba(96, 165, 250, 0.12); }
+.badge-confirmed { color: #bbf7d0; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.12); }
+.badge-done      { color: #e5e5e5; }
+.badge-cancelled { color: #fecaca; border-color: rgba(248, 113, 113, 0.4); background: rgba(248, 113, 113, 0.12); }
+
+.status-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+
+/* ---------- 16. Toast ---------- */
+#toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+  width: calc(100% - 32px);
+  max-width: 400px;
+}
+.toast {
+  pointer-events: auto;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast-show { opacity: 1; transform: translateY(0); }
+.toast-success { border-color: rgba(52, 211, 153, 0.5); }
+.toast-error   { border-color: rgba(248, 113, 113, 0.5); }
+.toast-info    { border-color: var(--border-strong); }
+
+/* ---------- 17. Модальное окно ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease both;
+}
+.modal-backdrop.is-open { display: flex; }
+
+.modal {
+  background: var(--card-bg-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeInUp 0.3s ease both;
+}
+.modal-lg { max-width: 720px; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.modal-title { font-size: 18px; font-weight: 700; margin: 0; }
+.modal-close { background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 4px; }
+.modal-close:hover { color: var(--text); }
+
+/* ---------- 18. Логин ---------- */
+.login-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.login-wrap::before {
+  content: "";
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(40% 40% at 20% 20%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(35% 35% at 80% 80%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%);
+  filter: blur(20px);
+  z-index: 0;
+  pointer-events: none;
+}
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: 30px 26px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-lg);
+}
+.login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.login-brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 20px var(--accent); }
+.login-title { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+.login-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 22px; }
+
+/* ---------- 19. Super admin ---------- */
+.projects-list { display: grid; gap: 14px; }
+@media (min-width: 720px) { .projects-list { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .projects-list { grid-template-columns: repeat(3, 1fr); } }
+
+.project-card { display: flex; flex-direction: column; gap: 10px; }
+.project-thumb {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 30px;
+  overflow: hidden;
+}
+.project-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+/* ---------- 20. Утилитарные ---------- */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+.gap-1 { gap: 8px; }
+.gap-2 { gap: 16px; }
+.flex-1 { flex: 1; }
+.w-full { width: 100%; }
+
+.divider { height: 1px; background: var(--border); margin: 16px 0; border: none; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.preview-swatch {
+  width: 100%; height: 60px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+/* Скроллбары (Webkit) */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* Уменьшение анимаций по системной настройке */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
