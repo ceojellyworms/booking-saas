@@ -173,6 +173,44 @@ begin
 end;
 $$;
 
+do $$
+declare
+  v_crypto_schema text;
+  v_function record;
+  v_updated integer := 0;
+begin
+  select n.nspname
+    into v_crypto_schema
+  from pg_extension e
+  join pg_namespace n on n.oid = e.extnamespace
+  where e.extname = 'pgcrypto';
+
+  if v_crypto_schema is null
+     or to_regprocedure(format('%I.crypt(text,text)', v_crypto_schema)) is null then
+    raise exception 'pgcrypto.crypt(text,text) was not found; no function settings were changed';
+  end if;
+
+  for v_function in
+    select p.oid::regprocedure as signature
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in ('verify_project_admin', 'verify_super_admin')
+  loop
+    execute format(
+      'alter function %s set search_path to public, %I, pg_temp',
+      v_function.signature,
+      v_crypto_schema
+    );
+    v_updated := v_updated + 1;
+  end loop;
+
+  if v_updated = 0 then
+    raise exception 'Password verification functions were not found; no function settings were changed';
+  end if;
+end;
+$$;
+
 revoke all on function public.create_admin_session(text, text, text) from public;
 revoke all on function public.validate_admin_session(text, text) from public;
 revoke all on function public.admin_create_project(text, text, text, text) from public;
@@ -240,12 +278,13 @@ $$;
 alter table public.projects enable row level security;
 alter table public.services enable row level security;
 alter table public.bookings enable row level security;
+alter table public.projects add column if not exists industry text;
 
 revoke all on public.projects from anon, authenticated;
 grant select (id) on public.projects to anon, authenticated;
 grant update (
   business_name, phone, address, accent_color, background_color,
-  logo_url, banner_url, social_links, work_hours
+  logo_url, banner_url, social_links, work_hours, industry
 ) on public.projects to anon, authenticated;
 grant delete on public.projects to anon, authenticated;
 
@@ -281,7 +320,8 @@ select
   p.social_links,
   p.work_hours,
   p.is_active,
-  p.created_at
+  p.created_at,
+  p.industry
 from public.projects p
 where p.is_active is true or public.admin_can_access_project(p.id::text);
 

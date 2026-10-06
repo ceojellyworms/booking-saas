@@ -377,7 +377,7 @@
 
     // Остальные поля — обычным update
     const patch = {};
-    ['phone', 'address', 'accent_color', 'background_color',
+    ['industry', 'phone', 'address', 'accent_color', 'background_color',
      'logo_url', 'banner_url', 'social_links', 'work_hours'].forEach(function (k) {
       if (payload[k] !== undefined) patch[k] = payload[k];
     });

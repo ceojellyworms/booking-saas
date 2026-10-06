@@ -171,6 +171,11 @@
         <hr class="divider" />
 
         <!-- --- Услуги --- -->
+        <div class="field">
+          <label for="pf-industry">Направление бизнеса</label>
+          <select class="input" id="pf-industry"></select>
+          <span class="field-hint">Персонализирует текст страницы записи и дополнительные поля.</span>
+        </div>
         <div class="field" id="pf-preset-field">
           <label for="pf-preset">Готовый пресет услуг</label>
           <select class="input" id="pf-preset">
@@ -221,7 +226,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 
   <script>
   (function () {
@@ -393,6 +398,19 @@
         const optgroup = document.createElement('optgroup');
         optgroup.label = group.category;
         group.items.forEach(function (item, itemIndex) {
+          const industryValue = group.category + ' — ' + item[0];
+          const industryOption = document.createElement('option');
+          industryOption.value = industryValue;
+          industryOption.textContent = item[0];
+          if (!$('#pf-industry').querySelector('optgroup[data-category="' + groupIndex + '"]')) {
+            const industryGroup = document.createElement('optgroup');
+            industryGroup.label = group.category;
+            industryGroup.dataset.category = String(groupIndex);
+            $('#pf-industry').appendChild(industryGroup);
+          }
+          $('#pf-industry').querySelector('optgroup[data-category="' + groupIndex + '"]')
+            .appendChild(industryOption);
+
           const option = document.createElement('option');
           option.value = groupIndex + ':' + itemIndex;
           option.textContent = item[0];
@@ -400,6 +418,10 @@
         });
         select.appendChild(optgroup);
       });
+      const other = document.createElement('option');
+      other.value = '';
+      other.textContent = 'Другое / не указано';
+      $('#pf-industry').insertBefore(other, $('#pf-industry').firstChild);
     }
 
     // ============================================================
@@ -521,6 +543,7 @@
       state.bannerUrl = project ? project.banner_url : null;
       state.services = [];
       state.socials = [];
+      $('#pf-industry').value = project ? (project.industry || '') : '';
       $('#pf-preset').value = '';
       $('#pf-preset-field').style.display = project ? 'none' : '';
 
@@ -763,6 +786,7 @@
         return;
       }
 
+      $('#pf-industry').value = group.category + ' — ' + preset[0];
       state.services = names.map(function (name) {
         return {
           id: App.uuid(),
@@ -852,6 +876,7 @@
       const address = $('#pf-address').value.trim();
       const accent = $('#pf-accent').value;
       const bg = $('#pf-bg').value;
+      const industry = $('#pf-industry').value || null;
       const whStart = $('#pf-start').value || '09:00';
       const whEnd = $('#pf-end').value || '20:00';
       const whDays = readDays();
@@ -885,6 +910,7 @@
       }
 
       const patch = {
+        industry: industry,
         phone: phone || null,
         address: address || null,
         accent_color: accent,

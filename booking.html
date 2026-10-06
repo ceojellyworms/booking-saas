@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="icon.svg" id="apple-touch-icon" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="booking-theme.css?v=3" />
+  <link rel="stylesheet" href="booking-theme.css?v=4" />
 </head>
 <body class="booking-page">
   <div class="page">
@@ -39,9 +39,9 @@
 
         <section class="booking-showcase" aria-labelledby="showcase-title">
           <div class="showcase-copy">
-            <p class="showcase-kicker">Онлайн-запись · быстро и удобно</p>
-            <h1 id="showcase-title">Ваше время.<br /><span>Ваши правила.</span></h1>
-            <p class="showcase-caption">Выберите услугу — остальное мы упростили.</p>
+            <p class="showcase-kicker" id="showcase-kicker">Онлайн-запись · быстро и удобно</p>
+            <h1 id="showcase-title"><span id="showcase-title-main">Ваше время.</span><br /><span id="showcase-title-accent">Ваши правила.</span></h1>
+            <p class="showcase-caption" id="showcase-caption">Выберите услугу — остальное мы упростили.</p>
           </div>
           <div class="showcase-glass" aria-hidden="true">
             <div class="glass-orbit"></div>
@@ -89,11 +89,16 @@
                 <input class="input" id="bf-name" type="text" required />
               </div>
 
+              <div class="booking-trap" aria-hidden="true">
+                <label for="bf-website">Website</label>
+                <input id="bf-website" name="website" type="text" tabindex="-1"
+                       autocomplete="off" />
+              </div>
+
               <div class="field">
                 <label for="bf-phone">Телефон *</label>
                 <input class="input" id="bf-phone" type="tel" inputmode="tel" autocomplete="tel"
                        placeholder="+7 (___) ___-__-__" maxlength="18" required />
-                <span class="field-hint">Код +7 подставлен автоматически. Введите номер начиная с 8 или 9.</span>
               </div>
 
               <div class="row-2">
@@ -107,9 +112,21 @@
                 </div>
               </div>
 
-              <div class="field">
+              <div class="field" id="bf-car-field">
                 <label for="bf-car">Автомобиль (если актуально)</label>
                 <input class="input" id="bf-car" type="text" placeholder="Например, Toyota Camry, А123БВ" />
+              </div>
+              <div class="row-2" id="bf-auto-fields" hidden>
+                <div class="field">
+                  <label for="bf-car-model">Марка и модель *</label>
+                  <input class="input" id="bf-car-model" type="text" maxlength="100"
+                         placeholder="Например, Toyota Camry" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="bf-car-plate">Госномер *</label>
+                  <input class="input" id="bf-car-plate" type="text" maxlength="12"
+                         placeholder="Например, А123ВС 77" autocapitalize="characters" />
+                </div>
               </div>
 
               <div class="field">
@@ -149,8 +166,9 @@
     </main>
 
     <footer class="footer">
-      <div class="container">
-        <span class="muted small">© <span id="footer-year"></span> <span id="footer-name"></span> · kamidere</span>
+      <div class="container footer-inner">
+        <span class="muted small">© <span id="footer-year"></span> <span id="footer-name">Онлайн-запись</span></span>
+        <span class="footer-platform muted small">Сделано на kamidere</span>
       </div>
     </footer>
   </div>
@@ -173,7 +191,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 
   <script>
   (function () {
@@ -190,6 +208,7 @@
       iconUrls: [],
       installPrompt: null
     };
+    $('#footer-year').textContent = new Date().getFullYear();
 
     // ============================================================
     // BOOT
@@ -209,15 +228,14 @@
           return;
         }
         state.project = project;
+        $('#footer-year').textContent = new Date().getFullYear();
+        $('#footer-name').textContent = project.business_name || '';
         applyProject(project);
         await configureWebApp(project);
         await loadServices();
         renderContacts(project);
         wireForm();
 
-        $('#footer-year').textContent = new Date().getFullYear();
-        $('#footer-name').textContent = project.business_name || '';
-        document.title = (project.business_name || 'Онлайн-запись') + ' — запись онлайн';
       } catch (err) {
         console.error(err);
         renderFatal('Ошибка загрузки: ' + (err.message || ''));
@@ -239,6 +257,7 @@
       App.applyTheme(p);
 
       $('#brand-name').textContent = p.business_name || '';
+      applyBusinessProfile(p);
 
       const brandLogo = $('#brand-logo');
       const bannerLogo = $('#banner-logo');
@@ -267,6 +286,75 @@
       }
     }
 
+    function applyBusinessProfile(project) {
+      const industry = (project.industry || '').split(' — ');
+      const category = industry.length > 1 ? industry[0] : '';
+      const type = industry.length > 1 ? industry.slice(1).join(' — ') : '';
+      const profiles = {
+        'Красота': {
+          title: ['Время для', 'себя.'],
+          caption: 'Выберите процедуру и удобное время — салон подтвердит запись.'
+        },
+        'Медицина': {
+          title: ['Забота о здоровье', 'без звонков.'],
+          caption: 'Выберите услугу и подходящее время для визита.'
+        },
+        'Образование': {
+          title: ['Время учиться', 'новому.'],
+          caption: 'Выберите занятие и удобное время для записи.'
+        },
+        'Ремонт и быт': {
+          title: ['Поручите заботы', 'специалистам.'],
+          caption: 'Опишите задачу и выберите удобное время.'
+        },
+        'Животные': {
+          title: ['Забота о вашем', 'питомце.'],
+          caption: 'Выберите услугу для питомца и время визита.'
+        },
+        'Еда и услуги': {
+          title: ['Закажите к', 'нужному времени.'],
+          caption: 'Выберите услугу или заказ и удобное время.'
+        },
+        'Спорт': {
+          title: ['Время двигаться', 'к цели.'],
+          caption: 'Выберите тренировку и время занятия.'
+        },
+        'Развлечения': {
+          title: ['Запланируйте', 'отдых.'],
+          caption: 'Выберите формат отдыха и удобное время.'
+        },
+        'Авто': {
+          title: ['Подготовим ваш', 'автомобиль.'],
+          caption: 'Выберите услугу — мы будем готовы к вашему приезду.'
+        },
+        'Услуги для бизнеса': {
+          title: ['Решайте важные', 'дела вовремя.'],
+          caption: 'Выберите консультацию или услугу и время встречи.'
+        },
+        'Недвижимость': {
+          title: ['Найдите место', 'для своих планов.'],
+          caption: 'Выберите консультацию или просмотр и удобное время.'
+        }
+      };
+      const profile = profiles[category] || {
+        title: ['Ваше время.', 'Ваши правила.'],
+        caption: 'Выберите услугу — остальное мы упростили.'
+      };
+      $('#showcase-kicker').textContent = type
+        ? 'Онлайн-запись · ' + type
+        : 'Онлайн-запись · ' + (project.business_name || 'быстро и удобно');
+      $('#showcase-title-main').textContent = profile.title[0];
+      $('#showcase-title-accent').textContent = profile.title[1];
+      $('#showcase-caption').textContent = profile.caption;
+
+      const isAutomotive = category === 'Авто' ||
+        (category === 'Ремонт и быт' && /Авто|Детейлинг|Шиномонтаж/.test(type));
+      $('#bf-car-field').hidden = isAutomotive;
+      $('#bf-auto-fields').hidden = !isAutomotive;
+      $('#bf-car-model').required = isAutomotive;
+      $('#bf-car-plate').required = isAutomotive;
+    }
+
     async function configureWebApp(project) {
       const businessName = (project.business_name || 'Онлайн-запись').trim();
       const logoUrl = project.logo_url || new URL('icon.svg', window.location.href).href;
@@ -274,16 +362,16 @@
       const appleIcon = $('#apple-touch-icon');
       const siteIcon = $('#site-icon');
       const themeColor = validThemeColor(project.background_color) || '#000000';
+      const accentColor = validThemeColor(project.accent_color) || themeColor;
       const appUrl = new URL('booking.html', window.location.href);
       appUrl.searchParams.set('b', state.slug);
       const scopeUrl = new URL('./', window.location.href);
       const iconType = getImageMimeType(logoUrl);
-      const manifestIcons = await createInstallIcons(logoUrl, themeColor, iconType);
 
       document.title = businessName + ' — запись онлайн';
       document.querySelector('meta[name="apple-mobile-web-app-title"]').content =
         businessName.slice(0, 30);
-      document.querySelector('meta[name="theme-color"]').content = themeColor;
+      document.querySelector('meta[name="theme-color"]').content = accentColor;
       appleIcon.href = logoUrl;
       siteIcon.href = logoUrl;
       siteIcon.type = iconType;
@@ -292,6 +380,7 @@
         $('#install-app').hidden = true;
       }
 
+      const manifestIcons = await createInstallIcons(logoUrl, themeColor, iconType);
       const manifest = {
         id: appUrl.href,
         name: businessName + ' — онлайн-запись',
@@ -303,7 +392,7 @@
         display_override: ['standalone', 'minimal-ui'],
         orientation: 'any',
         background_color: themeColor,
-        theme_color: validThemeColor(project.accent_color) || themeColor,
+        theme_color: accentColor,
         lang: 'ru',
         icons: manifestIcons
       };
@@ -841,6 +930,9 @@
       const f = $('#booking-form');
       f.reset();
       $('#bf-phone').value = '+7 ';
+      $('#bf-car').value = '';
+      $('#bf-car-model').value = '';
+      $('#bf-car-plate').value = '';
       const today = new Date().toISOString().slice(0, 10);
       $('#bf-date').value = today;
       const wh = state.project.work_hours || {};
@@ -856,18 +948,38 @@
       const name = $('#bf-name').value.trim();
       const phone = $('#bf-phone').value.trim();
       const phoneDigits = phone.replace(/\D/g, '');
+      const website = $('#bf-website').value.trim();
       const date = $('#bf-date').value;
       const time = $('#bf-time').value;
-      const car = $('#bf-car').value.trim();
+      const carModel = $('#bf-car-model').value.trim();
+      const carPlate = $('#bf-car-plate').value.trim();
+      const isAutomotive = !$('#bf-auto-fields').hidden;
+      const car = isAutomotive
+        ? 'Марка/модель: ' + carModel + '; госномер: ' + carPlate
+        : $('#bf-car').value.trim();
       const notes = $('#bf-notes').value.trim();
 
       if (!name) { App.toast('Укажите ваше имя', 'error'); $('#bf-name').focus(); return; }
+      if (website) {
+        App.toast('Не удалось отправить заявку. Проверьте форму и попробуйте ещё раз.', 'error');
+        return;
+      }
       if (phoneDigits.length < 11 || phoneDigits.charAt(0) !== '7' ||
           (phoneDigits.charAt(1) !== '8' && phoneDigits.charAt(1) !== '9')) {
         App.toast('Проверьте формат телефона', 'error'); $('#bf-phone').focus(); return;
       }
       if (!date) { App.toast('Выберите дату', 'error'); $('#bf-date').focus(); return; }
       if (!time) { App.toast('Выберите время', 'error'); $('#bf-time').focus(); return; }
+      if (isAutomotive && !carModel) {
+        App.toast('Укажите марку и модель автомобиля', 'error');
+        $('#bf-car-model').focus();
+        return;
+      }
+      if (isAutomotive && !carPlate) {
+        App.toast('Укажите госномер автомобиля', 'error');
+        $('#bf-car-plate').focus();
+        return;
+      }
 
       const wh = state.project.work_hours || {};
       if (wh.start && wh.end && (time < wh.start || time > wh.end)) {
@@ -880,6 +992,7 @@
         project_id: state.slug,
         client_name: name,
         client_phone: phone,
+        website: website || null,
         service_id: state.selectedService ? state.selectedService.id : null,
         service_name: state.selectedService ? state.selectedService.name : null,
         booking_date: date,

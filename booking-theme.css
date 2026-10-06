@@ -497,6 +497,27 @@
   color: rgba(255, 255, 255, .42);
 }
 
+.booking-page .footer-inner {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.booking-page .footer-platform {
+  font-size: 11px;
+  opacity: .72;
+}
+
+.booking-trap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .booking-page .empty {
   border-color: rgba(255, 255, 255, .19);
   border-radius: 5px;
