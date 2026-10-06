@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="booking-theme.css?v=5" />
+  <link rel="stylesheet" href="booking-theme.css?v=7" />
 </head>
 <body class="booking-page">
   <div class="page">
@@ -110,6 +110,7 @@
               </div>
               <div class="booking-slot-list" id="bf-slot-list" role="group" aria-label="Свободное время"></div>
               <p class="schedule-empty" id="bf-slot-status" aria-live="polite"></p>
+              <button class="schedule-retry" id="bf-slot-retry" type="button" hidden>Повторить</button>
               <input id="bf-time" type="hidden" />
             </div>
 
@@ -206,7 +207,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 
   <script>
   (function () {
@@ -221,7 +222,9 @@
       selectedService: null,
       selectedDate: null,
       availableSlots: [],
-      availabilityRequest: 0,
+      slotCalendar: {},
+      calendarRequest: 0,
+      calendarLoading: false,
       slotPoll: 0,
       manifestUrl: null,
       iconUrls: [],
@@ -528,7 +531,7 @@
         wrap.innerHTML = '<div class="empty">Список услуг пока пуст</div>';
         $('#form-section').style.display = 'block';
         $('#form-selected-service').textContent = 'Без выбора услуги · 60 мин';
-        loadBookingSlots();
+        loadBookingCalendar();
         return;
       }
 
@@ -582,8 +585,10 @@
         svc.name + ' · ' + (svc.duration_minutes || 60) + ' мин'
         + (svc.price != null ? ' · ' + App.formatMoney(svc.price) : '');
       $('#bf-time').value = '';
+      state.selectedDate = null;
       state.availableSlots = [];
-      loadBookingSlots();
+      state.slotCalendar = {};
+      loadBookingCalendar();
     }
 
     // ============================================================
@@ -655,7 +660,7 @@
       return workDays.some(function (value) { return Number(value) === day; });
     }
 
-    function renderBookingDates() {
+    function getBookingDates() {
       const today = new Date();
       const dates = [];
       for (let offset = 0; offset <= 30; offset++) {
@@ -666,12 +671,17 @@
           isWorkday: isBusinessWorkday(localDateString(date))
         });
       }
+      return dates;
+    }
 
+    function renderBookingDates() {
+      const dates = getBookingDates();
       const selected = dates.find(function (item) {
-        return item.value === state.selectedDate && item.isWorkday;
-      }) || dates.find(function (item) { return item.isWorkday; }) || dates[0];
-      state.selectedDate = selected.value;
-      $('#bf-date').value = selected.value;
+        return item.value === state.selectedDate
+          && item.isWorkday
+          && (state.slotCalendar[item.value] || []).length > 0;
+      });
+      $('#bf-date').value = selected ? selected.value : '';
 
       $('#bf-date-list').innerHTML = dates.map(function (item, index) {
         const label = index === 0
@@ -684,12 +694,13 @@
           day: 'numeric',
           month: 'long'
         }).format(item.date);
-        const isSelected = item.value === selected.value;
+        const isSelected = selected && item.value === selected.value;
+        const isAvailable = item.isWorkday && (state.slotCalendar[item.value] || []).length > 0;
         return '<button class="booking-date' + (isSelected ? ' is-selected' : '') + '"'
           + ' type="button" data-date="' + item.value + '"'
           + ' aria-label="' + fullDate + '"'
           + ' aria-pressed="' + String(isSelected) + '"'
-          + (item.isWorkday ? '' : ' disabled')
+          + (isAvailable ? '' : ' disabled')
           + '><span class="booking-date-weekday">' + label + '</span>'
           + '<strong>' + day + '</strong><span class="booking-date-month">' + month + '</span></button>';
       }).join('');
@@ -700,26 +711,37 @@
         });
       });
 
-      $('#bf-date-status').textContent = dates.some(function (item) { return item.isWorkday; })
-        ? ''
-        : 'Расписание на ближайшие 30 дней не настроено.';
+      const hasWorkdays = dates.some(function (item) { return item.isWorkday; });
+      const hasAvailableDay = dates.some(function (item) {
+        return (state.slotCalendar[item.value] || []).length > 0;
+      });
+      $('#bf-date-status').textContent = !hasWorkdays
+        ? 'Расписание на ближайшие 30 дней не настроено.'
+        : state.calendarLoading
+          ? 'Проверяем свободные даты…'
+          : hasAvailableDay
+            ? ''
+            : 'В ближайшие 30 дней свободного времени нет.';
     }
 
     function selectBookingDate(date) {
+      const slots = state.slotCalendar[date] || [];
+      if (!slots.length) return;
       state.selectedDate = date;
       $('#bf-date').value = date;
       $('#bf-time').value = '';
-      state.availableSlots = [];
+      state.availableSlots = slots.slice();
       $('#bf-date-list').querySelectorAll('.booking-date').forEach(function (button) {
         const selected = button.getAttribute('data-date') === date;
         button.classList.toggle('is-selected', selected);
         button.setAttribute('aria-pressed', String(selected));
       });
-      loadBookingSlots();
+      renderBookingSlots(state.availableSlots);
     }
 
     function renderBookingSlots(slots, emptyMessage) {
       const wrap = $('#bf-slot-list');
+      $('#bf-slot-retry').hidden = true;
       wrap.innerHTML = slots.map(function (slot) {
         const isSelected = $('#bf-time').value === slot;
         return '<button class="booking-slot' + (isSelected ? ' is-selected' : '') + '"'
@@ -736,54 +758,64 @@
       $('#bf-slot-status').textContent = emptyMessage || '';
     }
 
-    async function loadBookingSlots() {
-      if (!state.selectedDate || !state.project) return;
-      const requestId = ++state.availabilityRequest;
-      const date = state.selectedDate;
+    async function loadBookingCalendar() {
+      if (!state.project) return;
+      const requestId = ++state.calendarRequest;
       const serviceId = state.selectedService ? state.selectedService.id : null;
-
-      if (!isBusinessWorkday(date)) {
-        state.availableSlots = [];
-        $('#bf-time').value = '';
-        renderBookingSlots([], 'В этот день запись не ведётся.');
-        return;
-      }
-
-      renderBookingSlots(
-        state.availableSlots,
-        state.availableSlots.length ? 'Проверяем свободное время…' : 'Загружаем свободное время…'
-      );
+      const previousDate = state.selectedDate;
+      const dates = getBookingDates();
+      state.calendarLoading = true;
+      $('#bf-slot-retry').hidden = true;
+      renderBookingDates();
+      if (!state.selectedDate) renderBookingSlots([], 'Ищем ближайший день со свободным временем…');
       try {
-        const result = await App.listPublicBookingSlots(state.slug, date, serviceId);
-        if (requestId !== state.availabilityRequest || date !== state.selectedDate
+        const result = await App.listPublicBookingCalendar(state.slug, dates[0].value, serviceId);
+        if (requestId !== state.calendarRequest
             || serviceId !== (state.selectedService ? state.selectedService.id : null)) return;
 
         const now = new Date();
         const today = localDateString(now);
         const currentTime = String(now.getHours()).padStart(2, '0') + ':'
           + String(now.getMinutes()).padStart(2, '0');
-        state.availableSlots = result.map(function (row) {
-          return String(row.slot_time || '').slice(0, 5);
-        }).filter(function (slot) {
-          return /^\d{2}:\d{2}$/.test(slot) && (date !== today || slot > currentTime);
+        const nextCalendar = {};
+        dates.forEach(function (item) { nextCalendar[item.value] = []; });
+        result.forEach(function (row) {
+          const date = String(row.booking_date || '').slice(0, 10);
+          const slot = String(row.slot_time || '').slice(0, 5);
+          if (!nextCalendar[date] || !/^\d{2}:\d{2}$/.test(slot)
+              || (date === today && slot <= currentTime)) return;
+          nextCalendar[date].push(slot);
         });
+        Object.keys(nextCalendar).forEach(function (date) {
+          nextCalendar[date] = Array.from(new Set(nextCalendar[date])).sort();
+        });
+
+        state.slotCalendar = nextCalendar;
+        state.calendarLoading = false;
+        state.selectedDate = nextCalendar[previousDate] && nextCalendar[previousDate].length
+          ? previousDate
+          : dates.find(function (item) { return nextCalendar[item.value].length > 0; })?.value || null;
+        state.availableSlots = state.selectedDate
+          ? nextCalendar[state.selectedDate].slice()
+          : [];
         if (!state.availableSlots.includes($('#bf-time').value)) $('#bf-time').value = '';
-        const message = state.availableSlots.length
-          ? ''
-          : 'Свободного времени нет. Выберите другую дату.';
-        renderBookingSlots(state.availableSlots, message);
+        $('#bf-slot-retry').hidden = true;
+        renderBookingDates();
+        renderBookingSlots(
+          state.availableSlots,
+          state.selectedDate ? '' : 'В ближайшие 30 дней свободного времени нет.'
+        );
       } catch (err) {
-        if (requestId !== state.availabilityRequest) return;
+        if (requestId !== state.calendarRequest) return;
         console.error(err);
-        state.availableSlots = [];
-        $('#bf-time').value = '';
-        renderBookingSlots([], 'Не удалось загрузить время. Проверьте подключение и попробуйте ещё раз.');
-        const retry = document.createElement('button');
-        retry.className = 'schedule-retry';
-        retry.type = 'button';
-        retry.textContent = 'Повторить';
-        retry.addEventListener('click', loadBookingSlots);
-        $('#bf-slot-list').appendChild(retry);
+        state.calendarLoading = false;
+        renderBookingDates();
+        $('#bf-date-status').textContent = 'Не удалось проверить доступность дат.';
+        renderBookingSlots(
+          state.availableSlots,
+          'Не удалось проверить расписание. Проверьте подключение и попробуйте ещё раз.'
+        );
+        $('#bf-slot-retry').hidden = false;
       }
     }
 
@@ -807,21 +839,22 @@
           selectService(state.services[0].id);
         } else {
           $('#form-section').style.display = 'block';
-          loadBookingSlots();
+          loadBookingCalendar();
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
       $('#booking-form').addEventListener('submit', submitBooking);
+      $('#bf-slot-retry').addEventListener('click', loadBookingCalendar);
       state.slotPoll = window.setInterval(function () {
         if (document.visibilityState === 'visible'
             && $('#booking-panel').style.display !== 'none'
-            && state.selectedDate) loadBookingSlots();
+            && state.selectedService) loadBookingCalendar();
       }, 20000);
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible'
             && $('#booking-panel').style.display !== 'none'
-            && state.selectedDate) loadBookingSlots();
+            && state.selectedService) loadBookingCalendar();
       });
     }
 
@@ -1053,7 +1086,7 @@
       $('#bf-car-plate').value = '';
       $('#bf-time').value = '';
       renderBookingDates();
-      loadBookingSlots();
+      loadBookingCalendar();
     }
 
     // ============================================================
@@ -1112,7 +1145,7 @@
       if (!state.availableSlots.includes(time)) {
         $('#bf-time').value = '';
         App.toast('Это время уже недоступно. Выберите другое.', 'error');
-        loadBookingSlots();
+        loadBookingCalendar();
         return;
       }
       if (isAutomotive && !carModel) {
@@ -1153,7 +1186,7 @@
         if (String(err.message || '').toLowerCase().indexOf('no longer available') !== -1) {
           $('#bf-time').value = '';
           App.toast('Это время только что заняли. Выберите другое.', 'error');
-          loadBookingSlots();
+          loadBookingCalendar();
         } else {
           App.toast(err.message || 'Не удалось отправить заявку', 'error');
         }

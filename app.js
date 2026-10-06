@@ -580,6 +580,16 @@
     return data || [];
   }
 
+  async function listPublicBookingCalendar(projectId, startDate, serviceId) {
+    const { data, error } = await getClient().rpc('get_public_booking_calendar', {
+      p_project_id: projectId,
+      p_start_date: startDate,
+      p_service_id: serviceId || null
+    });
+    if (error) throw error;
+    return data || [];
+  }
+
   async function updateBookingStatus(id, status) {
     const { data, error } = await getClient()
       .from('bookings')
@@ -736,6 +746,7 @@
     listBookings: listBookings,
     createBooking: createBooking,
     listPublicBookingSlots: listPublicBookingSlots,
+    listPublicBookingCalendar: listPublicBookingCalendar,
     updateBookingStatus: updateBookingStatus,
     deleteBooking: deleteBooking,
     subscribeBookings: subscribeBookings,

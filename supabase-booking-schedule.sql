@@ -259,6 +259,101 @@ $$;
 revoke all on function public.get_public_booking_slots(text, date, text) from public;
 grant execute on function public.get_public_booking_slots(text, date, text) to anon, authenticated;
 
+create or replace function public.get_public_booking_calendar(
+  p_project_id text,
+  p_start_date date,
+  p_service_id text
+)
+returns table(booking_date date, slot_time time)
+language plpgsql
+stable
+security definer
+set search_path = pg_catalog, public, pg_temp
+as $$
+declare
+  v_work_hours jsonb;
+  v_open time;
+  v_close time;
+  v_duration integer;
+begin
+  if p_project_id is null
+     or p_start_date is null
+     or p_start_date < current_date
+     or p_start_date > current_date + 30
+     or not public.is_public_project(p_project_id) then
+    return;
+  end if;
+
+  select pg_catalog.to_jsonb(p.work_hours)
+  into v_work_hours
+  from public.projects p
+  where p.id::text = p_project_id;
+
+  if v_work_hours is null
+     or coalesce(v_work_hours->>'start', '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$'
+     or coalesce(v_work_hours->>'end', '') !~ '^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$' then
+    return;
+  end if;
+
+  v_open := (v_work_hours->>'start')::time;
+  v_close := (v_work_hours->>'end')::time;
+  if v_close <= v_open then
+    return;
+  end if;
+
+  if p_service_id is null then
+    v_duration := 60;
+  else
+    select coalesce(s.duration_minutes, 60)
+    into v_duration
+    from public.services s
+    where s.id::text = p_service_id
+      and s.project_id::text = p_project_id;
+
+    if not found then
+      return;
+    end if;
+  end if;
+
+  if v_duration < 1 or v_duration > 1440 then
+    return;
+  end if;
+
+  return query
+  select calendar_day.day_value::date, candidate.slot::time
+  from pg_catalog.generate_series(
+    p_start_date::timestamp,
+    least(p_start_date + 30, current_date + 30)::timestamp,
+    interval '1 day'
+  ) as calendar_day(day_value)
+  cross join lateral pg_catalog.generate_series(
+    calendar_day.day_value::date + v_open,
+    calendar_day.day_value::date + v_close - (v_duration * interval '1 minute'),
+    interval '30 minutes'
+  ) as candidate(slot)
+  where exists (
+      select 1
+      from pg_catalog.jsonb_array_elements_text(coalesce(v_work_hours->'days', '[]'::jsonb)) d(value)
+      where d.value = extract(dow from calendar_day.day_value)::integer::text
+    )
+    and not exists (
+      select 1
+      from public.bookings b
+      where b.project_id::text = p_project_id
+        and b.booking_date::text::date = calendar_day.day_value::date
+        and b.status is distinct from 'cancelled'
+        and extract(epoch from b.booking_time) / 60
+          < extract(epoch from candidate.slot::time) / 60 + v_duration
+        and extract(epoch from candidate.slot::time) / 60
+          < extract(epoch from b.booking_time) / 60 + coalesce(b.service_duration_minutes, 60)
+    )
+  order by calendar_day.day_value, candidate.slot;
+end;
+$$;
+
+revoke all on function public.get_public_booking_calendar(text, date, text) from public;
+grant execute on function public.get_public_booking_calendar(text, date, text) to anon, authenticated;
+
 commit;
 
 notify pgrst, 'reload schema';
