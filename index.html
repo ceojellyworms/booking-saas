@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0a0a0a" />
-  <title>Вход — Booking SaaS</title>
+  <title>Вход — kamidere</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
@@ -15,69 +15,35 @@
 
       <div class="login-brand">
         <span class="dot"></span>
-        <strong>Booking&nbsp;SaaS</strong>
+        <strong>kamidere</strong>
       </div>
       <h1 class="login-title">Вход в систему</h1>
       <p class="login-sub">Панель управления онлайн-записью</p>
 
       <div class="tabs mb-3" role="tablist">
-        <button class="tab is-active" data-tab="client" type="button">Клиент</button>
-        <button class="tab" data-tab="owner" type="button">Владелец</button>
+        <button class="tab is-active" data-tab="owner" type="button">Владелец бизнеса</button>
+        <button class="tab" data-tab="admin" type="button">Администратор сайта</button>
       </div>
 
-      <!-- ============ Вкладка: КЛИЕНТ ============ -->
-      <div class="tab-panel is-active" data-panel="client">
-        <form id="client-form" autocomplete="off" novalidate>
+      <!-- ============ Вкладка: ВЛАДЕЛЕЦ БИЗНЕСА ============ -->
+      <div class="tab-panel is-active" data-panel="owner">
+        <form id="owner-form" autocomplete="off" novalidate>
           <div class="field">
-            <label for="client-project">ID проекта</label>
+            <label for="owner-project">ID проекта</label>
             <input
               class="input"
-              id="client-project"
+              id="owner-project"
               name="project"
               type="text"
+              placeholder="например, pisun123"
               autocomplete="off"
               autocapitalize="off"
               spellcheck="false"
               required
             />
-            <span class="field-hint">Выдаётся супер-администратором</span>
+            <span class="field-hint">Выдаётся администратором сайта</span>
           </div>
 
-          <div class="field">
-            <label for="client-login">Логин</label>
-            <input
-              class="input"
-              id="client-login"
-              name="login"
-              type="text"
-              autocomplete="username"
-              autocapitalize="off"
-              spellcheck="false"
-              required
-            />
-          </div>
-
-          <div class="field">
-            <label for="client-password">Пароль</label>
-            <input
-              class="input"
-              id="client-password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-            />
-          </div>
-
-          <button class="btn btn-primary btn-block btn-lg mt-2" type="submit" id="client-submit">
-            Войти
-          </button>
-        </form>
-      </div>
-
-      <!-- ============ Вкладка: ВЛАДЕЛЕЦ ============ -->
-      <div class="tab-panel" data-panel="owner">
-        <form id="owner-form" autocomplete="off" novalidate>
           <div class="field">
             <label for="owner-login">Логин</label>
             <input
@@ -105,7 +71,42 @@
           </div>
 
           <button class="btn btn-primary btn-block btn-lg mt-2" type="submit" id="owner-submit">
-            Войти как владелец
+            Войти
+          </button>
+        </form>
+      </div>
+
+      <!-- ============ Вкладка: АДМИНИСТРАТОР САЙТА ============ -->
+      <div class="tab-panel" data-panel="admin">
+        <form id="admin-form" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="admin-login">Логин</label>
+            <input
+              class="input"
+              id="admin-login"
+              name="login"
+              type="text"
+              autocomplete="username"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="admin-password">Пароль</label>
+            <input
+              class="input"
+              id="admin-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg mt-2" type="submit" id="admin-submit">
+            Войти как администратор
           </button>
         </form>
       </div>
@@ -125,10 +126,10 @@
   (function () {
     'use strict';
 
-    const clientForm = document.getElementById('client-form');
-    const ownerForm  = document.getElementById('owner-form');
-    const clientBtn  = document.getElementById('client-submit');
-    const ownerBtn   = document.getElementById('owner-submit');
+    const ownerForm = document.getElementById('owner-form');
+    const adminForm = document.getElementById('admin-form');
+    const ownerBtn  = document.getElementById('owner-submit');
+    const adminBtn  = document.getElementById('admin-submit');
 
     // --- Переключение вкладок ---
     document.querySelectorAll('.tab').forEach(function (tab) {
@@ -146,7 +147,7 @@
     // --- Предзаполнение ID проекта из ?b=slug ---
     const prefill = App.getUrlParam('b');
     if (prefill) {
-      document.getElementById('client-project').value = prefill;
+      document.getElementById('owner-project').value = prefill;
     }
 
     // --- Кнопка блокируется + спиннер ---
@@ -161,7 +162,6 @@
       }
     }
 
-    // --- Общая валидация ---
     function requireFields(fields) {
       for (const f of fields) {
         if (!f.value || !f.value.trim()) {
@@ -173,13 +173,13 @@
       return true;
     }
 
-    // --- Логин клиента ---
-    clientForm.addEventListener('submit', async function (e) {
+    // --- Логин владельца бизнеса ---
+    ownerForm.addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      const project  = document.getElementById('client-project');
-      const login    = document.getElementById('client-login');
-      const password = document.getElementById('client-password');
+      const project  = document.getElementById('owner-project');
+      const login    = document.getElementById('owner-login');
+      const password = document.getElementById('owner-password');
 
       if (!requireFields([project, login, password])) return;
 
@@ -189,7 +189,7 @@
         return;
       }
 
-      setLoading(clientBtn, true);
+      setLoading(ownerBtn, true);
       try {
         const ok = await App.loginProject(slug, login.value.trim(), password.value);
         if (!ok) {
@@ -204,20 +204,20 @@
         console.error(err);
         App.toast(err.message || 'Ошибка входа', 'error');
       } finally {
-        setLoading(clientBtn, false);
+        setLoading(ownerBtn, false);
       }
     });
 
-    // --- Логин супер-админа ---
-    ownerForm.addEventListener('submit', async function (e) {
+    // --- Логин администратора сайта ---
+    adminForm.addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      const login    = document.getElementById('owner-login');
-      const password = document.getElementById('owner-password');
+      const login    = document.getElementById('admin-login');
+      const password = document.getElementById('admin-password');
 
       if (!requireFields([login, password])) return;
 
-      setLoading(ownerBtn, true);
+      setLoading(adminBtn, true);
       try {
         const ok = await App.loginSuperAdmin(login.value.trim(), password.value);
         if (!ok) {
@@ -230,11 +230,11 @@
         console.error(err);
         App.toast(err.message || 'Ошибка входа', 'error');
       } finally {
-        setLoading(ownerBtn, false);
+        setLoading(adminBtn, false);
       }
     });
 
-    // --- Если уже залогинен, даём быстрый переход ---
+    // --- Если уже залогинен, сразу редиректим ---
     (async function checkExisting() {
       const s = App.getSession();
       if (!s) return;
