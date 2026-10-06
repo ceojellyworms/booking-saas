@@ -132,7 +132,7 @@
         <div class="grid grid-2">
           <div class="field">
             <label for="pf-phone">Телефон</label>
-            <input class="input" id="pf-phone" type="tel" />
+            <input class="input" id="pf-phone" type="tel" value="+7 " placeholder="+7 (___) ___-__-__" maxlength="18" />
           </div>
           <div class="field">
             <label for="pf-address">Адрес</label>
@@ -226,7 +226,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=6"></script>
 
   <script>
   (function () {
@@ -560,6 +560,7 @@
       $('#pf-accent').value = (project && project.accent_color) || '#ef4444';
       $('#pf-bg').value = (project && project.background_color) || '#0a0a0a';
       $('#pf-phone').value = (project && project.phone) || '';
+      App.bindRussianPhoneInput($('#pf-phone'));
       $('#pf-address').value = (project && project.address) || '';
 
       $('#pf-logo').value = '';
@@ -873,6 +874,7 @@
       const login = $('#pf-login').value.trim();
       const password = $('#pf-password').value;
       const phone = $('#pf-phone').value.trim();
+      const phoneDigits = App.getRussianPhoneDigits(phone);
       const address = $('#pf-address').value.trim();
       const accent = $('#pf-accent').value;
       const bg = $('#pf-bg').value;
@@ -888,6 +890,11 @@
       if (!name) { App.toast('Укажите название бизнеса', 'error'); return; }
       if (!login) { App.toast('Укажите логин владельца', 'error'); return; }
       if (!isEdit && !password) { App.toast('Задайте пароль владельца', 'error'); return; }
+      if (phoneDigits.length > 1 && !App.isValidRussianPhone(phone)) {
+        App.toast('Введите российский номер полностью: 10 цифр после +7', 'error');
+        $('#pf-phone').focus();
+        return;
+      }
 
       // Соцсети → объект
       const socials = {};
@@ -911,7 +918,7 @@
 
       const patch = {
         industry: industry,
-        phone: phone || null,
+        phone: phoneDigits.length > 1 ? phone : null,
         address: address || null,
         accent_color: accent,
         background_color: bg,

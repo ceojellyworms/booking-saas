@@ -128,7 +128,7 @@
               <div class="field booking-client-field">
                 <label for="bf-phone">Телефон *</label>
                 <input class="input" id="bf-phone" type="tel" inputmode="tel" autocomplete="tel"
-                       placeholder="+7 (___) ___-__-__" maxlength="18" required />
+                       value="+7 " placeholder="+7 (___) ___-__-__" maxlength="18" required />
               </div>
 
               <div class="field" id="bf-car-field">
@@ -210,7 +210,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 
   <script>
   (function () {
@@ -315,7 +315,7 @@
       const type = industry.length > 1 ? industry.slice(1).join(' — ') : '';
       const profiles = {
         'Красота': {
-          title: ['Время для', 'себя.'],
+          title: ['Запись без', 'лишних звонков.'],
           caption: 'Выберите процедуру и удобное время — салон подтвердит запись.'
         },
         'Медицина': {
@@ -795,7 +795,7 @@
     function wireForm() {
       renderBookingDates();
 
-      wireRussianPhone();
+      App.bindRussianPhoneInput($('#bf-phone'));
 
       $('#bf-cancel').addEventListener('click', resetForm);
       $('#th-again').addEventListener('click', function () {
@@ -827,62 +827,6 @@
         if (document.visibilityState === 'visible'
             && $('#booking-panel').style.display !== 'none'
             && state.selectedDate) loadBookingSlots();
-      });
-    }
-
-    function wireRussianPhone() {
-      const input = $('#bf-phone');
-      input.value = '+7 ';
-      input.addEventListener('input', function (event) {
-        const oldValue = input.value;
-        const caret = input.selectionStart || oldValue.length;
-        const digitsBeforeCaret = oldValue.slice(0, caret).replace(/\D/g, '').length;
-
-        let digits = oldValue.replace(/\D/g, '');
-        const enteredDomesticPrefix = /^\+7\s*\(?8\)?$/.test(oldValue);
-        if (enteredDomesticPrefix) {
-          digits = '7';
-        } else if (/^\s*8/.test(oldValue)) {
-          digits = digits.slice(1);
-        } else if (/^\s*\+?7/.test(oldValue)) {
-          digits = digits.slice(1);
-        } else if (digits.length > 10 && digits.charAt(0) === '7') {
-          digits = digits.slice(1);
-        }
-
-        digits = digits.slice(0, 10);
-        if (digits && digits.charAt(0) !== '8' && digits.charAt(0) !== '9') {
-          digits = digits.slice(1);
-        }
-
-        let formatted = '+7';
-        if (digits.length) {
-          formatted += ' (' + digits.slice(0, 3);
-          if (digits.length >= 3) formatted += ')';
-          if (digits.length > 3) formatted += ' ' + digits.slice(3, 6);
-          if (digits.length > 6) formatted += '-' + digits.slice(6, 8);
-          if (digits.length > 8) formatted += '-' + digits.slice(8, 10);
-        } else {
-          formatted += ' ';
-        }
-
-        input.value = formatted;
-        if (!digits.length) {
-          input.setSelectionRange(formatted.length, formatted.length);
-          return;
-        }
-        const formattedDigitCount = formatted.replace(/\D/g, '').length;
-        const targetDigitCount = Math.max(
-          1,
-          Math.min(digitsBeforeCaret, formattedDigitCount)
-        );
-        let position = 0;
-        let seenDigits = 0;
-        while (position < formatted.length && seenDigits < targetDigitCount) {
-          if (/\d/.test(formatted.charAt(position))) seenDigits += 1;
-          position += 1;
-        }
-        input.setSelectionRange(position, position);
       });
     }
 
@@ -1109,6 +1053,7 @@
       const f = $('#booking-form');
       f.reset();
       $('#bf-phone').value = '+7 ';
+      App.bindRussianPhoneInput($('#bf-phone'));
       $('#bf-car').value = '';
       $('#bf-car-model').value = '';
       $('#bf-car-plate').value = '';
@@ -1125,7 +1070,6 @@
 
       const name = $('#bf-name').value.trim();
       const phone = $('#bf-phone').value.trim();
-      const phoneDigits = phone.replace(/\D/g, '');
       const website = $('#bf-website').value.trim();
       const date = $('#bf-date').value;
       const time = $('#bf-time').value;
@@ -1142,9 +1086,10 @@
         App.toast('Не удалось отправить заявку. Проверьте форму и попробуйте ещё раз.', 'error');
         return;
       }
-      if (phoneDigits.length < 11 || phoneDigits.charAt(0) !== '7' ||
-          (phoneDigits.charAt(1) !== '8' && phoneDigits.charAt(1) !== '9')) {
-        App.toast('Проверьте формат телефона', 'error'); $('#bf-phone').focus(); return;
+      if (!App.isValidRussianPhone(phone)) {
+        App.toast('Введите российский номер полностью: 10 цифр после +7', 'error');
+        $('#bf-phone').focus();
+        return;
       }
       if (!date) {
         App.toast('Выберите дату', 'error');

@@ -413,7 +413,7 @@
             </div>
             <div class="field">
               <label for="client-phone">Телефон</label>
-              <input id="client-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 900 000 00 00" />
+              <input id="client-phone" type="tel" inputmode="tel" autocomplete="tel" value="+7 " maxlength="18" placeholder="+7 (___) ___-__-__" />
               <span class="error" id="phone-error" aria-live="polite"></span>
             </div>
           </div>
@@ -467,6 +467,57 @@
       var state = { service: SERVICES[0], day: toIsoDate(dayList[initialOffset]), time: null };
       var bookings = [];
       var tesseract = document.getElementById('tesseract');
+      var phoneInput = document.getElementById('client-phone');
+
+      function formatRussianPhone(value) {
+        var raw = String(value || '');
+        var hasCountryPrefix = /^\s*\+?7/.test(raw);
+        var digits = raw.replace(/\D/g, '');
+        if (hasCountryPrefix && digits.charAt(0) === '7') {
+          digits = digits.slice(1);
+          if (digits.length > 10 && digits.charAt(0) === '7') digits = digits.slice(1);
+        } else if (digits.length === 11 && digits.charAt(0) === '8') {
+          digits = digits.slice(1);
+        }
+        digits = digits.slice(0, 10);
+        if (digits && digits.charAt(0) !== '8' && digits.charAt(0) !== '9') {
+          digits = digits.slice(1);
+        }
+        var formatted = '+7 ';
+        if (digits.length) {
+          formatted += '(' + digits.slice(0, 3);
+          if (digits.length >= 3) formatted += ')';
+          if (digits.length > 3) formatted += ' ' + digits.slice(3, 6);
+          if (digits.length > 6) formatted += '-' + digits.slice(6, 8);
+          if (digits.length > 8) formatted += '-' + digits.slice(8, 10);
+        }
+        return formatted;
+      }
+
+      phoneInput.addEventListener('input', function () {
+        var raw = phoneInput.value;
+        var caret = phoneInput.selectionStart || raw.length;
+        var hasCountryPrefix = /^\s*\+?7/.test(raw);
+        var digitsBeforeCaret = raw.slice(0, caret).replace(/\D/g, '').length;
+        var localDigitsBeforeCaret = Math.max(0, digitsBeforeCaret - (hasCountryPrefix ? 1 : 0));
+        phoneInput.value = formatRussianPhone(raw);
+        var totalDigits = phoneInput.value.replace(/\D/g, '').length;
+        var caretDigitCount = 1 + Math.min(localDigitsBeforeCaret, totalDigits - 1);
+        var position = 0;
+        var seenDigits = 0;
+        while (position < phoneInput.value.length && seenDigits < caretDigitCount) {
+          if (/\d/.test(phoneInput.value.charAt(position))) seenDigits += 1;
+          position += 1;
+        }
+        phoneInput.setSelectionRange(position, position);
+      });
+      function keepPhonePrefix(input) {
+        if ((input.selectionStart || 0) <= 3) {
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }
+      phoneInput.addEventListener('focus', function () { keepPhonePrefix(phoneInput); });
+      phoneInput.addEventListener('click', function () { keepPhonePrefix(phoneInput); });
       var vertices = [];
       var edges = [];
       var edgeElements = [];
@@ -760,12 +811,15 @@
       document.getElementById('booking-form').addEventListener('submit', function (event) {
         event.preventDefault();
         var nameInput = document.getElementById('client-name');
-        var phoneInput = document.getElementById('client-phone');
         var name = nameInput.value.trim();
         var digits = phoneInput.value.replace(/\D/g, '');
         document.getElementById('name-error').textContent = name.length < 2 ? 'Введите имя' : '';
-        document.getElementById('phone-error').textContent = digits.length < 10 ? 'Введите номер телефона полностью' : '';
-        if (name.length < 2 || digits.length < 10 || state.time === null) return;
+        var validPhone = digits.length === 11 && digits.charAt(0) === '7' &&
+          (digits.charAt(1) === '8' || digits.charAt(1) === '9');
+        document.getElementById('phone-error').textContent = validPhone
+          ? ''
+          : 'Введите 10 цифр после +7, начиная с 8 или 9';
+        if (name.length < 2 || !validPhone || state.time === null) return;
         if (!dayList.some(function (date) { return toIsoDate(date) === state.day; }) ||
             !availableSlots(state.day, state.service.minutes).includes(state.time)) {
           state.time = null;
@@ -795,6 +849,7 @@
 
       document.getElementById('book-another').addEventListener('click', function () {
         document.getElementById('booking-form').reset();
+        phoneInput.value = '+7 ';
         document.getElementById('name-error').textContent = '';
         document.getElementById('phone-error').textContent = '';
         document.getElementById('done').hidden = true;

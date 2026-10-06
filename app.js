@@ -46,6 +46,91 @@
       .replace(/'/g, '&#39;');
   }
 
+  function getRussianPhoneDigits(value) {
+    return String(value || '').replace(/\D/g, '');
+  }
+
+  function isValidRussianPhone(value) {
+    const digits = getRussianPhoneDigits(value);
+    return digits.length === 11 && digits.charAt(0) === '7'
+      && (digits.charAt(1) === '8' || digits.charAt(1) === '9');
+  }
+
+  function bindRussianPhoneInput(input) {
+    if (!input) return;
+    if (input.dataset.russianPhoneBound === 'true') {
+      input.value = formatRussianPhone(input.value);
+      return;
+    }
+
+    input.dataset.russianPhoneBound = 'true';
+    input.inputMode = 'tel';
+    input.autocomplete = 'tel';
+    input.maxLength = 18;
+
+    input.addEventListener('input', function () {
+      const rawValue = input.value;
+      const rawCaret = input.selectionStart || rawValue.length;
+      const hasCountryPrefix = /^\s*\+?7/.test(rawValue);
+      const digitsBeforeCaret = rawValue.slice(0, rawCaret).replace(/\D/g, '').length;
+      const localDigitsBeforeCaret = Math.max(
+        0,
+        digitsBeforeCaret - (hasCountryPrefix ? 1 : 0)
+      );
+      input.value = formatRussianPhone(rawValue);
+      const caretDigitCount = 1 + Math.min(localDigitsBeforeCaret, input.value.replace(/\D/g, '').length - 1);
+      let caret = 0;
+      let seenDigits = 0;
+      while (caret < input.value.length && seenDigits < caretDigitCount) {
+        if (/\d/.test(input.value.charAt(caret))) seenDigits += 1;
+        caret += 1;
+      }
+      input.setSelectionRange(caret, caret);
+    });
+
+    input.addEventListener('focus', function () {
+      if ((input.selectionStart || 0) <= 3) {
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    });
+
+    input.addEventListener('click', function () {
+      if ((input.selectionStart || 0) <= 3) {
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    });
+
+    input.value = formatRussianPhone(input.value);
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+
+  function formatRussianPhone(value) {
+    const rawValue = String(value || '');
+    const hasCountryPrefix = /^\s*\+?7/.test(rawValue);
+    let digits = getRussianPhoneDigits(rawValue);
+    if (hasCountryPrefix && digits.charAt(0) === '7') {
+      digits = digits.slice(1);
+      if (digits.length > 10 && digits.charAt(0) === '7') digits = digits.slice(1);
+    } else if (digits.length === 11 && digits.charAt(0) === '8') {
+      digits = digits.slice(1);
+    }
+
+    digits = digits.slice(0, 10);
+    if (digits && digits.charAt(0) !== '8' && digits.charAt(0) !== '9') {
+      digits = digits.slice(1);
+    }
+
+    let formatted = '+7 ';
+    if (digits.length) {
+      formatted += '(' + digits.slice(0, 3);
+      if (digits.length >= 3) formatted += ')';
+      if (digits.length > 3) formatted += ' ' + digits.slice(3, 6);
+      if (digits.length > 6) formatted += '-' + digits.slice(6, 8);
+      if (digits.length > 8) formatted += '-' + digits.slice(8, 10);
+    }
+    return formatted;
+  }
+
   function safeHttpUrl(value) {
     try {
       const url = new URL(String(value || '').trim(), window.location.origin);
@@ -597,6 +682,9 @@
 
     // утилиты
     escapeHtml: escapeHtml,
+    getRussianPhoneDigits: getRussianPhoneDigits,
+    isValidRussianPhone: isValidRussianPhone,
+    bindRussianPhoneInput: bindRussianPhoneInput,
     safeHttpUrl: safeHttpUrl,
     uuid: uuid,
     getUrlParam: getUrlParam,
