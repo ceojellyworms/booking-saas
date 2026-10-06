@@ -106,7 +106,7 @@
 
               <div class="booking-time-heading">
                 <h3>Свободное время</h3>
-                <span class="muted small">Интервалы по 30 минут</span>
+                <span class="muted small" id="bf-slot-interval-label">Шаг старта — 30 минут</span>
               </div>
               <div class="booking-slot-list" id="bf-slot-list" role="group" aria-label="Свободное время"></div>
               <p class="schedule-empty" id="bf-slot-status" aria-live="polite"></p>
@@ -612,6 +612,8 @@
       }
 
       const wh = p.work_hours;
+      const slotInterval = Number(wh && wh.slot_interval_minutes) || 30;
+      $('#bf-slot-interval-label').textContent = 'Шаг старта — ' + slotInterval + ' мин';
       if (wh && (wh.start || wh.end || (wh.days && wh.days.length))) {
         const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
         const days = (wh.days || []).slice().sort(function (a, b) { return a - b; });

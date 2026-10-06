@@ -152,6 +152,11 @@
                 <input class="input" id="st-end" type="time" />
               </div>
               <div class="field">
+                <label for="st-slot-interval">Шаг начала записи (минуты)</label>
+                <input class="input" id="st-slot-interval" type="number" min="5" max="240" step="5" value="30" />
+                <small class="muted">От 5 до 240 минут; длительность услуги настраивается отдельно.</small>
+              </div>
+              <div class="field">
                 <label>Рабочие дни</label>
                 <div class="row" id="st-days"></div>
               </div>
@@ -353,6 +358,7 @@
       const wh = p.work_hours || { start: '09:00', end: '20:00', days: [1,2,3,4,5,6] };
       $('#st-start').value = wh.start || '09:00';
       $('#st-end').value = wh.end || '20:00';
+      $('#st-slot-interval').value = wh.slot_interval_minutes || 30;
       renderDays(wh.days || []);
 
       const sl = p.social_links || {};
@@ -811,6 +817,13 @@
         return;
       }
 
+      const slotInterval = Number($('#st-slot-interval').value);
+      if (!Number.isInteger(slotInterval) || slotInterval < 5 || slotInterval > 240 || slotInterval % 5 !== 0) {
+        App.toast('Шаг начала записи должен быть от 5 до 240 минут, кратно 5', 'error');
+        $('#st-slot-interval').focus();
+        return;
+      }
+
       const patch = {
         business_name: name,
         phone: phoneDigits.length > 1 ? phone : null,
@@ -818,6 +831,7 @@
         work_hours: {
           start: $('#st-start').value || '09:00',
           end: $('#st-end').value || '20:00',
+          slot_interval_minutes: slotInterval,
           days: readDays()
         },
         social_links: socials

@@ -164,6 +164,11 @@
           </div>
         </div>
         <div class="field">
+          <label for="pf-slot-interval">Шаг начала записи (минуты)</label>
+          <input class="input" id="pf-slot-interval" type="number" min="5" max="240" step="5" value="30" />
+          <small class="muted">От 5 до 240 минут; длительность услуги настраивается отдельно.</small>
+        </div>
+        <div class="field">
           <label>Рабочие дни</label>
           <div class="row" id="pf-days"></div>
         </div>
@@ -572,6 +577,7 @@
       const wh = (project && project.work_hours) || { start: '09:00', end: '20:00', days: [1,2,3,4,5,6] };
       $('#pf-start').value = wh.start || '09:00';
       $('#pf-end').value = wh.end || '20:00';
+      $('#pf-slot-interval').value = wh.slot_interval_minutes || 30;
       renderDays(wh.days || []);
 
       // Соцсети
@@ -881,6 +887,7 @@
       const industry = $('#pf-industry').value || null;
       const whStart = $('#pf-start').value || '09:00';
       const whEnd = $('#pf-end').value || '20:00';
+      const slotInterval = Number($('#pf-slot-interval').value);
       const whDays = readDays();
 
       if (!/^[a-z0-9_-]+$/.test(slug)) {
@@ -893,6 +900,11 @@
       if (phoneDigits.length > 1 && !App.isValidRussianPhone(phone)) {
         App.toast('Введите российский номер полностью: 10 цифр после +7', 'error');
         $('#pf-phone').focus();
+        return;
+      }
+      if (!Number.isInteger(slotInterval) || slotInterval < 5 || slotInterval > 240 || slotInterval % 5 !== 0) {
+        App.toast('Шаг начала записи должен быть от 5 до 240 минут, кратно 5', 'error');
+        $('#pf-slot-interval').focus();
         return;
       }
 
@@ -925,7 +937,12 @@
         logo_url: state.logoUrl,
         banner_url: state.bannerUrl,
         social_links: socials,
-        work_hours: { start: whStart, end: whEnd, days: whDays }
+        work_hours: {
+          start: whStart,
+          end: whEnd,
+          slot_interval_minutes: slotInterval,
+          days: whDays
+        }
       };
 
       const btn = $('#pf-save');

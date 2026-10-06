@@ -33,6 +33,7 @@ declare
   v_open_minute integer;
   v_close_minute integer;
   v_duration integer;
+  v_slot_interval integer;
 begin
   v_booking_date := new.booking_date::date;
 
@@ -53,6 +54,17 @@ begin
 
   v_open := (v_work_hours->>'start')::time;
   v_close := (v_work_hours->>'end')::time;
+  if v_work_hours ? 'slot_interval_minutes' then
+    if coalesce(v_work_hours->>'slot_interval_minutes', '') !~ '^[0-9]{1,3}$' then
+      raise exception using errcode = '23514', message = 'Invalid booking slot interval';
+    end if;
+    v_slot_interval := (v_work_hours->>'slot_interval_minutes')::integer;
+  else
+    v_slot_interval := 30;
+  end if;
+  if v_slot_interval < 5 or v_slot_interval > 240 or mod(v_slot_interval, 5) <> 0 then
+    raise exception using errcode = '23514', message = 'Invalid booking slot interval';
+  end if;
   v_open_minute := extract(hour from v_open)::integer * 60 + extract(minute from v_open)::integer;
   v_close_minute := extract(hour from v_close)::integer * 60 + extract(minute from v_close)::integer;
   v_start_minute := extract(hour from new.booking_time)::integer * 60
@@ -84,7 +96,7 @@ begin
   if v_duration < 1 or v_duration > 1440
      or v_start_minute < v_open_minute
      or v_start_minute + v_duration > v_close_minute
-     or mod(v_start_minute - v_open_minute, 30) <> 0
+     or mod(v_start_minute - v_open_minute, v_slot_interval) <> 0
      or extract(second from new.booking_time) <> 0 then
     raise exception using errcode = '23514', message = 'Invalid booking time';
   end if;
@@ -185,6 +197,7 @@ declare
   v_open time;
   v_close time;
   v_duration integer;
+  v_slot_interval integer;
 begin
   if p_project_id is null
      or p_booking_date is null
@@ -216,6 +229,18 @@ begin
     return;
   end if;
 
+  if v_work_hours ? 'slot_interval_minutes' then
+    if coalesce(v_work_hours->>'slot_interval_minutes', '') !~ '^[0-9]{1,3}$' then
+      return;
+    end if;
+    v_slot_interval := (v_work_hours->>'slot_interval_minutes')::integer;
+  else
+    v_slot_interval := 30;
+  end if;
+  if v_slot_interval < 5 or v_slot_interval > 240 or mod(v_slot_interval, 5) <> 0 then
+    return;
+  end if;
+
   if p_service_id is null then
     v_duration := 60;
   else
@@ -239,7 +264,7 @@ begin
   from pg_catalog.generate_series(
     p_booking_date + v_open,
     p_booking_date + v_close - (v_duration * interval '1 minute'),
-    interval '30 minutes'
+    v_slot_interval * interval '1 minute'
   ) as candidate(slot)
   where not exists (
       select 1
@@ -275,6 +300,7 @@ declare
   v_open time;
   v_close time;
   v_duration integer;
+  v_slot_interval integer;
 begin
   if p_project_id is null
      or p_start_date is null
@@ -298,6 +324,18 @@ begin
   v_open := (v_work_hours->>'start')::time;
   v_close := (v_work_hours->>'end')::time;
   if v_close <= v_open then
+    return;
+  end if;
+
+  if v_work_hours ? 'slot_interval_minutes' then
+    if coalesce(v_work_hours->>'slot_interval_minutes', '') !~ '^[0-9]{1,3}$' then
+      return;
+    end if;
+    v_slot_interval := (v_work_hours->>'slot_interval_minutes')::integer;
+  else
+    v_slot_interval := 30;
+  end if;
+  if v_slot_interval < 5 or v_slot_interval > 240 or mod(v_slot_interval, 5) <> 0 then
     return;
   end if;
 
@@ -329,7 +367,7 @@ begin
   cross join lateral pg_catalog.generate_series(
     calendar_day.day_value::date + v_open,
     calendar_day.day_value::date + v_close - (v_duration * interval '1 minute'),
-    interval '30 minutes'
+    v_slot_interval * interval '1 minute'
   ) as candidate(slot)
   where exists (
       select 1
