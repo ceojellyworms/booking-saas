@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Вход — Booking SaaS</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card animate-in">
+
+      <div class="login-brand">
+        <span class="dot"></span>
+        <strong>Booking&nbsp;SaaS</strong>
+      </div>
+      <h1 class="login-title">Вход в систему</h1>
+      <p class="login-sub">Панель управления онлайн-записью</p>
+
+      <div class="tabs mb-3" role="tablist">
+        <button class="tab is-active" data-tab="client" type="button">Клиент</button>
+        <button class="tab" data-tab="owner" type="button">Владелец</button>
+      </div>
+
+      <!-- ============ Вкладка: КЛИЕНТ ============ -->
+      <div class="tab-panel is-active" data-panel="client">
+        <form id="client-form" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="client-project">ID проекта</label>
+            <input
+              class="input"
+              id="client-project"
+              name="project"
+              type="text"
+              placeholder="например, pisun123"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+            />
+            <span class="field-hint">Выдаётся супер-администратором</span>
+          </div>
+
+          <div class="field">
+            <label for="client-login">Логин</label>
+            <input
+              class="input"
+              id="client-login"
+              name="login"
+              type="text"
+              autocomplete="username"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="client-password">Пароль</label>
+            <input
+              class="input"
+              id="client-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg mt-2" type="submit" id="client-submit">
+            Войти
+          </button>
+        </form>
+      </div>
+
+      <!-- ============ Вкладка: ВЛАДЕЛЕЦ ============ -->
+      <div class="tab-panel" data-panel="owner">
+        <form id="owner-form" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="owner-login">Логин</label>
+            <input
+              class="input"
+              id="owner-login"
+              name="login"
+              type="text"
+              autocomplete="username"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="owner-password">Пароль</label>
+            <input
+              class="input"
+              id="owner-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg mt-2" type="submit" id="owner-submit">
+            Войти как владелец
+          </button>
+        </form>
+      </div>
+
+      <p class="small muted text-center mt-3 mb-0">
+        Нет доступа? Обратитесь к администратору сервиса.
+      </p>
+    </div>
+  </div>
+
+  <!-- SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const clientForm = document.getElementById('client-form');
+    const ownerForm  = document.getElementById('owner-form');
+    const clientBtn  = document.getElementById('client-submit');
+    const ownerBtn   = document.getElementById('owner-submit');
+
+    // --- Переключение вкладок ---
+    document.querySelectorAll('.tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        const name = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(function (t) {
+          t.classList.toggle('is-active', t === tab);
+        });
+        document.querySelectorAll('.tab-panel').forEach(function (p) {
+          p.classList.toggle('is-active', p.getAttribute('data-panel') === name);
+        });
+      });
+    });
+
+    // --- Предзаполнение ID проекта из ?b=slug ---
+    const prefill = App.getUrlParam('b');
+    if (prefill) {
+      document.getElementById('client-project').value = prefill;
+    }
+
+    // --- Кнопка блокируется + спиннер ---
+    function setLoading(btn, loading) {
+      if (loading) {
+        btn.dataset.original = btn.textContent;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Проверка…';
+      } else {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.original || 'Войти';
+      }
+    }
+
+    // --- Общая валидация ---
+    function requireFields(fields) {
+      for (const f of fields) {
+        if (!f.value || !f.value.trim()) {
+          f.focus();
+          App.toast('Заполните все поля', 'error');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // --- Логин клиента ---
+    clientForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const project  = document.getElementById('client-project');
+      const login    = document.getElementById('client-login');
+      const password = document.getElementById('client-password');
+
+      if (!requireFields([project, login, password])) return;
+
+      const slug = project.value.trim().toLowerCase();
+      if (!/^[a-z0-9_-]+$/.test(slug)) {
+        App.toast('ID проекта: только латиница, цифры, дефис, подчёркивание', 'error');
+        return;
+      }
+
+      setLoading(clientBtn, true);
+      try {
+        const ok = await App.loginProject(slug, login.value.trim(), password.value);
+        if (!ok) {
+          App.toast('Неверный логин или пароль', 'error');
+          return;
+        }
+        App.toast('Добро пожаловать!', 'success');
+        setTimeout(function () {
+          window.location.href = 'admin.html?b=' + encodeURIComponent(slug);
+        }, 300);
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка входа', 'error');
+      } finally {
+        setLoading(clientBtn, false);
+      }
+    });
+
+    // --- Логин супер-админа ---
+    ownerForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const login    = document.getElementById('owner-login');
+      const password = document.getElementById('owner-password');
+
+      if (!requireFields([login, password])) return;
+
+      setLoading(ownerBtn, true);
+      try {
+        const ok = await App.loginSuperAdmin(login.value.trim(), password.value);
+        if (!ok) {
+          App.toast('Неверный логин или пароль', 'error');
+          return;
+        }
+        App.toast('Вход выполнен', 'success');
+        setTimeout(function () { window.location.href = 'super.html'; }, 300);
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка входа', 'error');
+      } finally {
+        setLoading(ownerBtn, false);
+      }
+    });
+
+    // --- Если уже залогинен, даём быстрый переход ---
+    (async function checkExisting() {
+      const s = App.getSession();
+      if (!s) return;
+
+      if (App.isSuperAdmin()) {
+        const ok = await App.validateSession(null);
+        if (ok) window.location.href = 'super.html';
+        return;
+      }
+
+      if (s.project_id) {
+        const ok = await App.validateSession(s.project_id);
+        if (ok) window.location.href = 'admin.html?b=' + encodeURIComponent(s.project_id);
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>
