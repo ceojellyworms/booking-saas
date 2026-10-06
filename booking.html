@@ -131,10 +131,6 @@
                        value="+7 " placeholder="+7 (___) ___-__-__" maxlength="18" required />
               </div>
 
-              <div class="field" id="bf-car-field">
-                <label for="bf-car">Автомобиль (если актуально)</label>
-                <input class="input" id="bf-car" type="text" placeholder="Например, Toyota Camry, А123БВ" />
-              </div>
               <div class="row-2" id="bf-auto-fields" hidden>
                 <div class="field">
                   <label for="bf-car-model">Марка и модель *</label>
@@ -372,7 +368,6 @@
 
       const isAutomotive = category === 'Авто' ||
         (category === 'Ремонт и быт' && /Авто|Детейлинг|Шиномонтаж/.test(type));
-      $('#bf-car-field').hidden = isAutomotive;
       $('#bf-auto-fields').hidden = !isAutomotive;
       $('#bf-car-model').required = isAutomotive;
       $('#bf-car-plate').required = isAutomotive;
@@ -1054,7 +1049,6 @@
       f.reset();
       $('#bf-phone').value = '+7 ';
       App.bindRussianPhoneInput($('#bf-phone'));
-      $('#bf-car').value = '';
       $('#bf-car-model').value = '';
       $('#bf-car-plate').value = '';
       $('#bf-time').value = '';
@@ -1078,7 +1072,7 @@
       const isAutomotive = !$('#bf-auto-fields').hidden;
       const car = isAutomotive
         ? 'Марка/модель: ' + carModel + '; госномер: ' + carPlate
-        : $('#bf-car').value.trim();
+        : '';
       const notes = $('#bf-notes').value.trim();
 
       if (!name) { App.toast('Укажите ваше имя', 'error'); $('#bf-name').focus(); return; }

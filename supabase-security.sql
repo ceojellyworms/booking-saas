@@ -186,8 +186,15 @@ begin
   where e.extname = 'pgcrypto';
 
   if v_crypto_schema is null
-     or to_regprocedure(format('%I.crypt(text,text)', v_crypto_schema)) is null then
-    raise exception 'pgcrypto.crypt(text,text) was not found; no function settings were changed';
+     or to_regprocedure(format('%I.crypt(text,text)', v_crypto_schema)) is null
+     or not exists (
+       select 1
+       from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = v_crypto_schema
+         and p.proname = 'gen_salt'
+     ) then
+    raise exception 'pgcrypto.crypt() and gen_salt() were not found; no function settings were changed';
   end if;
 
   for v_function in
@@ -195,7 +202,12 @@ begin
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
-      and p.proname in ('verify_project_admin', 'verify_super_admin')
+      and p.proname in (
+        'verify_project_admin',
+        'verify_super_admin',
+        'create_project',
+        'update_project_password'
+      )
   loop
     execute format(
       'alter function %s set search_path to public, %I, pg_temp',
