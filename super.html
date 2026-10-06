@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>kamidere — Администратор сайта</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- ============ TOPBAR ============ -->
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <div class="topbar-brand">
+          <span class="dot"></span>
+          <span>kamidere</span>
+          <span class="badge" style="margin-left:8px">администратор</span>
+        </div>
+        <div class="row gap-1">
+          <button class="btn btn-primary btn-sm" id="btn-new-project">+ Создать проект</button>
+          <button class="btn btn-sm btn-ghost" id="btn-logout">Выйти</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <div class="container">
+
+        <div class="row row-between mb-3">
+          <div>
+            <h1 class="mb-0">Проекты</h1>
+            <p class="muted small mb-0" id="projects-count">Загрузка…</p>
+          </div>
+          <button class="btn" id="btn-refresh">Обновить</button>
+        </div>
+
+        <div class="projects-list" id="projects-list">
+          <div class="empty">Загрузка проектов…</div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span class="muted small">kamidere · панель администратора сайта</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ============ МОДАЛКА: ПРОЕКТ ============ -->
+  <div class="modal-backdrop" id="project-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" id="pm-title">Новый проект</h3>
+        <button class="modal-close" type="button" data-close>&times;</button>
+      </div>
+
+      <form id="project-form" autocomplete="off" novalidate>
+
+        <!-- --- Основное --- -->
+        <h4 class="mb-1">Основное</h4>
+
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pf-slug">ID проекта (slug)</label>
+            <input class="input" id="pf-slug" name="slug" type="text"
+                   autocapitalize="off" spellcheck="false" required />
+            <span class="field-hint">Латиница, цифры, дефис, подчёркивание</span>
+          </div>
+          <div class="field">
+            <label for="pf-name">Название бизнеса</label>
+            <input class="input" id="pf-name" name="business_name" type="text" required />
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pf-login">Логин владельца бизнеса</label>
+            <input class="input" id="pf-login" name="admin_login" type="text"
+                   autocapitalize="off" spellcheck="false" required />
+          </div>
+          <div class="field">
+            <label for="pf-password">Пароль владельца бизнеса</label>
+            <div class="row">
+              <input class="input flex-1" id="pf-password" name="admin_password"
+                     type="text" autocapitalize="off" spellcheck="false" />
+              <button class="btn btn-sm" type="button" id="pf-genpass">Сгенерировать</button>
+            </div>
+            <span class="field-hint" id="pf-pass-hint"></span>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- --- Оформление --- -->
+        <h4 class="mb-1">Оформление</h4>
+
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pf-accent">Акцентный цвет</label>
+            <input class="input" id="pf-accent" name="accent_color" type="color" value="#ef4444" />
+          </div>
+          <div class="field">
+            <label for="pf-bg">Цвет фона</label>
+            <input class="input" id="pf-bg" name="background_color" type="color" value="#0a0a0a" />
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pf-logo">Логотип</label>
+            <input class="input" id="pf-logo" type="file" accept="image/*" />
+            <span class="field-hint" id="pf-logo-hint"></span>
+          </div>
+          <div class="field">
+            <label for="pf-banner">Баннер</label>
+            <input class="input" id="pf-banner" type="file" accept="image/*" />
+            <span class="field-hint" id="pf-banner-hint"></span>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- --- Контакты --- -->
+        <h4 class="mb-1">Контакты</h4>
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pf-phone">Телефон</label>
+            <input class="input" id="pf-phone" type="tel" />
+          </div>
+          <div class="field">
+            <label for="pf-address">Адрес</label>
+            <input class="input" id="pf-address" type="text" />
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- --- Соцсети --- -->
+        <div class="row row-between mb-1">
+          <h4 class="mb-0">Соцсети</h4>
+          <button class="btn btn-sm" type="button" id="pf-add-social">+ Добавить</button>
+        </div>
+        <div id="pf-socials" class="col mb-2"></div>
+
+        <hr class="divider" />
+
+        <!-- --- Часы работы --- -->
+        <h4 class="mb-1">Часы работы</h4>
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pf-start">Начало</label>
+            <input class="input" id="pf-start" type="time" value="09:00" />
+          </div>
+          <div class="field">
+            <label for="pf-end">Конец</label>
+            <input class="input" id="pf-end" type="time" value="20:00" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Рабочие дни</label>
+          <div class="row" id="pf-days"></div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- --- Услуги --- -->
+        <div class="row row-between mb-1">
+          <h4 class="mb-0">Услуги</h4>
+          <button class="btn btn-sm" type="button" id="pf-add-service">+ Услуга</button>
+        </div>
+        <div id="pf-services" class="col mb-2"></div>
+
+        <hr class="divider" />
+
+        <div class="row row-between">
+          <button class="btn" type="button" data-close>Отмена</button>
+          <button class="btn btn-primary" type="submit" id="pf-save">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ МОДАЛКА: РЕЗУЛЬТАТ СОЗДАНИЯ ============ -->
+  <div class="modal-backdrop" id="result-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title">Проект создан</h3>
+        <button class="modal-close" type="button" data-close>&times;</button>
+      </div>
+
+      <p class="muted small">Ссылка для конечных клиентов:</p>
+      <div class="row mb-3">
+        <input class="input flex-1" id="rm-link" readonly />
+        <button class="btn" type="button" id="rm-copy-link">Копировать</button>
+      </div>
+
+      <p class="muted small">Данные входа владельца бизнеса:</p>
+      <div class="row mb-2">
+        <input class="input flex-1" id="rm-creds" readonly />
+        <button class="btn" type="button" id="rm-copy-creds">Копировать</button>
+      </div>
+
+      <button class="btn btn-primary btn-block mt-2" type="button" data-close>Готово</button>
+    </div>
+  </div>
+
+  <!-- SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ============================================================
+    // Состояние
+    // ============================================================
+    const state = {
+      projects: [],
+      editing: null,       // null = создание; иначе — объект проекта
+      logoUrl: null,       // текущий URL логотипа (уже загруженного)
+      bannerUrl: null,
+      services: [],        // { id, _isNew, _deleted, name, price, duration_minutes, image_url, description, _file }
+      socials: []          // [{ name, url }]
+    };
+
+    const DAYS = [
+      { v: 1, label: 'Пн' }, { v: 2, label: 'Вт' }, { v: 3, label: 'Ср' },
+      { v: 4, label: 'Чт' }, { v: 5, label: 'Пт' }, { v: 6, label: 'Сб' },
+      { v: 0, label: 'Вс' }
+    ];
+
+    // ============================================================
+    // Утилиты для DOM
+    // ============================================================
+    const $ = function (sel) { return document.querySelector(sel); };
+    const $$ = function (sel) { return Array.from(document.querySelectorAll(sel)); };
+
+    function openModal(id)  { document.getElementById(id).classList.add('is-open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('is-open'); }
+
+    // ============================================================
+    // Проверка доступа
+    // ============================================================
+    (async function boot() {
+      const ok = await App.requireSuperAdmin('/');
+      if (!ok) return;
+
+      $('#btn-logout').addEventListener('click', function () {
+        App.clearSession();
+        window.location.href = '/';
+      });
+
+      $('#btn-new-project').addEventListener('click', function () {
+        openEditor(null);
+      });
+
+      $('#btn-refresh').addEventListener('click', loadProjects);
+
+      await loadProjects();
+    })();
+
+    // ============================================================
+    // Список проектов
+    // ============================================================
+    async function loadProjects() {
+      const list = $('#projects-list');
+      try {
+        state.projects = await App.listProjects();
+        renderProjects();
+      } catch (err) {
+        console.error(err);
+        list.innerHTML = '<div class="empty">Не удалось загрузить проекты: ' + App.escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    function renderProjects() {
+      const list = $('#projects-list');
+      $('#projects-count').textContent = 'Всего: ' + state.projects.length;
+
+      if (!state.projects.length) {
+        list.innerHTML = '<div class="empty">Пока нет ни одного проекта. Создайте первый.</div>';
+        return;
+      }
+
+      list.innerHTML = state.projects.map(function (p) {
+        const thumb = p.banner_url
+          ? 'style="background-image:url(' + App.escapeHtml(p.banner_url) + ')"'
+          : '';
+        const logo = p.logo_url
+          ? '<img src="' + App.escapeHtml(p.logo_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" />'
+          : '<span>◆</span>';
+        const inactive = p.is_active ? '' : ' <span class="badge">неактивен</span>';
+
+        return ''
+          + '<div class="card project-card card-hover" data-slug="' + App.escapeHtml(p.id) + '">'
+          +   '<div class="project-thumb" ' + thumb + '>' + logo + '</div>'
+          +   '<div>'
+          +     '<div class="row row-between">'
+          +       '<div class="card-title ellipsis">' + App.escapeHtml(p.business_name) + inactive + '</div>'
+          +     '</div>'
+          +     '<div class="card-sub ellipsis">' + App.escapeHtml(p.id) + '</div>'
+          +   '</div>'
+          +   '<div class="project-actions">'
+          +     '<button class="btn btn-sm btn-primary" data-act="open">Открыть админку</button>'
+          +     '<button class="btn btn-sm" data-act="edit">Редактировать</button>'
+          +     '<button class="btn btn-sm" data-act="copy-link">Ссылка</button>'
+          +     '<button class="btn btn-sm btn-danger" data-act="delete">Удалить</button>'
+          +   '</div>'
+          + '</div>';
+      }).join('');
+
+      // Делегирование
+      list.querySelectorAll('.project-card').forEach(function (card) {
+        const slug = card.getAttribute('data-slug');
+        const project = state.projects.find(function (p) { return p.id === slug; });
+
+        card.addEventListener('click', async function (e) {
+          const btn = e.target.closest('button[data-act]');
+          if (!btn) return;
+          e.stopPropagation();
+          const act = btn.getAttribute('data-act');
+
+          if (act === 'open') {
+            window.open('admin.html?b=' + encodeURIComponent(slug), '_blank');
+          } else if (act === 'edit') {
+            openEditor(project);
+          } else if (act === 'copy-link') {
+            const url = location.origin + '/booking.html?b=' + encodeURIComponent(slug);
+            const ok = await App.copyToClipboard(url);
+            App.toast(ok ? 'Ссылка скопирована' : 'Не удалось скопировать', ok ? 'success' : 'error');
+          } else if (act === 'delete') {
+            deleteProjectFlow(project);
+          }
+        });
+      });
+    }
+
+    async function deleteProjectFlow(project) {
+      const ok = confirm('Удалить проект «' + project.business_name + '» (' + project.id + ')?\nВсе услуги и заявки будут удалены безвозвратно.');
+      if (!ok) return;
+      try {
+        await App.deleteProject(project.id);
+        App.toast('Проект удалён', 'success');
+        await loadProjects();
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка удаления', 'error');
+      }
+    }
+
+    // ============================================================
+    // Открытие редактора
+    // ============================================================
+    function openEditor(project) {
+      state.editing = project || null;
+      state.logoUrl = project ? project.logo_url : null;
+      state.bannerUrl = project ? project.banner_url : null;
+      state.services = [];
+      state.socials = [];
+
+      $('#pm-title').textContent = project ? 'Редактировать проект' : 'Новый проект';
+      $('#pf-slug').value = project ? project.id : '';
+      $('#pf-slug').disabled = !!project;
+      $('#pf-name').value = project ? project.business_name : '';
+      $('#pf-login').value = project ? project.admin_login : '';
+      $('#pf-password').value = '';
+      $('#pf-pass-hint').textContent = project
+        ? 'Оставьте пустым, чтобы не менять'
+        : 'Задайте пароль для владельца бизнеса';
+
+      $('#pf-accent').value = (project && project.accent_color) || '#ef4444';
+      $('#pf-bg').value = (project && project.background_color) || '#0a0a0a';
+      $('#pf-phone').value = (project && project.phone) || '';
+      $('#pf-address').value = (project && project.address) || '';
+
+      $('#pf-logo').value = '';
+      $('#pf-banner').value = '';
+      $('#pf-logo-hint').textContent = state.logoUrl ? 'Логотип загружен' : 'Не загружен';
+      $('#pf-banner-hint').textContent = state.bannerUrl ? 'Баннер загружен' : 'Не загружен';
+
+      // Часы работы
+      const wh = (project && project.work_hours) || { start: '09:00', end: '20:00', days: [1,2,3,4,5,6] };
+      $('#pf-start').value = wh.start || '09:00';
+      $('#pf-end').value = wh.end || '20:00';
+      renderDays(wh.days || []);
+
+      // Соцсети
+      const sl = (project && project.social_links) || {};
+      state.socials = Object.keys(sl).map(function (k) { return { name: k, url: sl[k] }; });
+      renderSocials();
+
+      // Услуги
+      renderServices();
+      if (project) {
+        loadProjectServices(project.id);
+      }
+
+      openModal('project-modal');
+    }
+
+    async function loadProjectServices(slug) {
+      try {
+        const rows = await App.listServices(slug);
+        state.services = rows.map(function (s) {
+          return {
+            id: s.id,
+            _isNew: false,
+            _deleted: false,
+            name: s.name,
+            price: s.price,
+            duration_minutes: s.duration_minutes || 60,
+            image_url: s.image_url,
+            description: s.description || '',
+            _file: null
+          };
+        });
+        renderServices();
+      } catch (err) {
+        console.error(err);
+        App.toast('Не удалось загрузить услуги', 'error');
+      }
+    }
+
+    // ============================================================
+    // Часы работы: дни недели
+    // ============================================================
+    function renderDays(active) {
+      const wrap = $('#pf-days');
+      wrap.innerHTML = DAYS.map(function (d) {
+        const on = active.indexOf(d.v) !== -1;
+        return ''
+          + '<label class="btn btn-sm" style="cursor:pointer">'
+          +   '<input type="checkbox" value="' + d.v + '" ' + (on ? 'checked' : '') + ' style="margin-right:6px" />'
+          +   d.label
+          + '</label>';
+      }).join('');
+    }
+
+    function readDays() {
+      return $$('#pf-days input[type="checkbox"]')
+        .filter(function (c) { return c.checked; })
+        .map(function (c) { return Number(c.value); });
+    }
+
+    // ============================================================
+    // Соцсети
+    // ============================================================
+    function renderSocials() {
+      const wrap = $('#pf-socials');
+      if (!state.socials.length) {
+        wrap.innerHTML = '<p class="muted small mb-0">Не добавлено</p>';
+        return;
+      }
+      wrap.innerHTML = state.socials.map(function (s, i) {
+        return ''
+          + '<div class="row" data-social-index="' + i + '">'
+          +   '<input class="input" style="flex:0 0 130px" placeholder="Название" value="' + App.escapeHtml(s.name) + '" data-f="name" />'
+          +   '<input class="input flex-1" placeholder="https://…" value="' + App.escapeHtml(s.url) + '" data-f="url" />'
+          +   '<button type="button" class="btn btn-sm btn-danger" data-remove>&times;</button>'
+          + '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('[data-social-index]').forEach(function (row) {
+        const idx = Number(row.getAttribute('data-social-index'));
+        row.querySelectorAll('input[data-f]').forEach(function (inp) {
+          inp.addEventListener('input', function () {
+            state.socials[idx][inp.getAttribute('data-f')] = inp.value;
+          });
+        });
+        row.querySelector('[data-remove]').addEventListener('click', function () {
+          state.socials.splice(idx, 1);
+          renderSocials();
+        });
+      });
+    }
+
+    $('#pf-add-social').addEventListener('click', function () {
+      state.socials.push({ name: '', url: '' });
+      renderSocials();
+    });
+
+    // ============================================================
+    // Услуги
+    // ============================================================
+    function renderServices() {
+      const wrap = $('#pf-services');
+      const visible = state.services.filter(function (s) { return !s._deleted; });
+
+      if (!visible.length) {
+        wrap.innerHTML = '<p class="muted small mb-0">Не добавлено</p>';
+        return;
+      }
+
+      wrap.innerHTML = state.services.map(function (s, i) {
+        if (s._deleted) return '';
+        const imgStyle = s.image_url
+          ? 'background-image:url(' + App.escapeHtml(s.image_url) + ');background-size:cover;background-position:center'
+          : '';
+        return ''
+          + '<div class="card" data-service-index="' + i + '" style="padding:12px">'
+          +   '<div class="row" style="align-items:flex-start">'
+          +     '<div class="project-thumb" style="flex:0 0 92px;aspect-ratio:1/1;' + imgStyle + '"></div>'
+          +     '<div class="flex-1 col" style="gap:8px">'
+          +       '<input class="input" placeholder="Название" value="' + App.escapeHtml(s.name) + '" data-f="name" />'
+          +       '<div class="row">'
+          +         '<input class="input flex-1" type="number" min="0" step="1" placeholder="Цена, ₽" value="' + (s.price == null ? '' : s.price) + '" data-f="price" />'
+          +         '<input class="input flex-1" type="number" min="5" step="5" placeholder="Минут" value="' + (s.duration_minutes || 60) + '" data-f="duration_minutes" />'
+          +       '</div>'
+          +       '<textarea class="textarea" rows="2" placeholder="Описание (необязательно)" data-f="description">' + App.escapeHtml(s.description) + '</textarea>'
+          +       '<input class="input" type="file" accept="image/*" data-f="file" />'
+          +     '</div>'
+          +     '<button type="button" class="btn btn-sm btn-danger" data-remove>Удалить</button>'
+          +   '</div>'
+          + '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('[data-service-index]').forEach(function (card) {
+        const idx = Number(card.getAttribute('data-service-index'));
+        const svc = state.services[idx];
+
+        card.querySelectorAll('[data-f]').forEach(function (inp) {
+          const f = inp.getAttribute('data-f');
+          if (f === 'file') {
+            inp.addEventListener('change', async function () {
+              const file = inp.files && inp.files[0];
+              if (!file) return;
+              svc._file = file;
+              try {
+                const url = await App.uploadFile(file, 'services', svc.id);
+                svc.image_url = url;
+                svc._file = null;
+                renderServices();
+                App.toast('Картинка услуги загружена', 'success');
+              } catch (err) {
+                console.error(err);
+                App.toast('Ошибка загрузки: ' + (err.message || ''), 'error');
+              }
+            });
+          } else if (f === 'price') {
+            inp.addEventListener('input', function () {
+              svc.price = inp.value === '' ? null : Number(inp.value);
+            });
+          } else if (f === 'duration_minutes') {
+            inp.addEventListener('input', function () {
+              svc.duration_minutes = Number(inp.value) || 60;
+            });
+          } else {
+            inp.addEventListener('input', function () {
+              svc[f] = inp.value;
+            });
+          }
+        });
+
+        card.querySelector('[data-remove]').addEventListener('click', function () {
+          if (svc._isNew) {
+            state.services.splice(idx, 1);
+          } else {
+            svc._deleted = true;
+          }
+          renderServices();
+        });
+      });
+    }
+
+    $('#pf-add-service').addEventListener('click', function () {
+      state.services.push({
+        id: App.uuid(),
+        _isNew: true,
+        _deleted: false,
+        name: '',
+        price: null,
+        duration_minutes: 60,
+        image_url: null,
+        description: '',
+        _file: null
+      });
+      renderServices();
+    });
+
+    // ============================================================
+    // Загрузка логотипа и баннера
+    // ============================================================
+    $('#pf-logo').addEventListener('change', async function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const slug = $('#pf-slug').value.trim().toLowerCase();
+      if (!/^[a-z0-9_-]+$/.test(slug)) {
+        App.toast('Сначала укажите корректный ID проекта', 'error');
+        e.target.value = '';
+        return;
+      }
+      try {
+        const url = await App.uploadFile(file, 'logos', slug);
+        state.logoUrl = url;
+        $('#pf-logo-hint').textContent = 'Логотип загружен';
+        App.toast('Логотип загружен', 'success');
+      } catch (err) {
+        console.error(err);
+        App.toast('Ошибка загрузки логотипа', 'error');
+      }
+    });
+
+    $('#pf-banner').addEventListener('change', async function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const slug = $('#pf-slug').value.trim().toLowerCase();
+      if (!/^[a-z0-9_-]+$/.test(slug)) {
+        App.toast('Сначала укажите корректный ID проекта', 'error');
+        e.target.value = '';
+        return;
+      }
+      try {
+        const url = await App.uploadFile(file, 'banners', slug);
+        state.bannerUrl = url;
+        $('#pf-banner-hint').textContent = 'Баннер загружен';
+        App.toast('Баннер загружен', 'success');
+      } catch (err) {
+        console.error(err);
+        App.toast('Ошибка загрузки баннера', 'error');
+      }
+    });
+
+    // ============================================================
+    // Генерация пароля
+    // ============================================================
+    $('#pf-genpass').addEventListener('click', function () {
+      const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%';
+      let s = '';
+      const arr = new Uint32Array(12);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      for (let i = 0; i < 12; i++) s += chars[arr[i] % chars.length];
+      $('#pf-password').value = s;
+    });
+
+    // ============================================================
+    // Сохранение
+    // ============================================================
+    $('#project-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      await saveProject();
+    });
+
+    async function saveProject() {
+      const isEdit = !!state.editing;
+      const slug = (isEdit ? state.editing.id : $('#pf-slug').value).trim().toLowerCase();
+      const name = $('#pf-name').value.trim();
+      const login = $('#pf-login').value.trim();
+      const password = $('#pf-password').value;
+      const phone = $('#pf-phone').value.trim();
+      const address = $('#pf-address').value.trim();
+      const accent = $('#pf-accent').value;
+      const bg = $('#pf-bg').value;
+      const whStart = $('#pf-start').value || '09:00';
+      const whEnd = $('#pf-end').value || '20:00';
+      const whDays = readDays();
+
+      if (!/^[a-z0-9_-]+$/.test(slug)) {
+        App.toast('ID проекта: только латиница/цифры/дефис/подчёркивание', 'error');
+        return;
+      }
+      if (!name) { App.toast('Укажите название бизнеса', 'error'); return; }
+      if (!login) { App.toast('Укажите логин владельца', 'error'); return; }
+      if (!isEdit && !password) { App.toast('Задайте пароль владельца', 'error'); return; }
+
+      // Соцсети → объект
+      const socials = {};
+      state.socials.forEach(function (s) {
+        const n = (s.name || '').trim();
+        const u = (s.url || '').trim();
+        if (n && u) socials[n] = u;
+      });
+
+      const patch = {
+        phone: phone || null,
+        address: address || null,
+        accent_color: accent,
+        background_color: bg,
+        logo_url: state.logoUrl,
+        banner_url: state.bannerUrl,
+        social_links: socials,
+        work_hours: { start: whStart, end: whEnd, days: whDays }
+      };
+
+      const btn = $('#pf-save');
+      btn.disabled = true;
+      const prevText = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span> Сохранение…';
+
+      try {
+        if (isEdit) {
+          await App.updateProject(slug, patch);
+          if (password) {
+            await App.updateProjectPassword(slug, password);
+          }
+        } else {
+          await App.createProject({
+            id: slug,
+            business_name: name,
+            admin_login: login,
+            admin_password: password,
+            ...patch
+          });
+        }
+
+        await syncServices(slug);
+        await loadProjects();
+
+        closeModal('project-modal');
+
+        if (!isEdit) {
+          showResult(slug, login, password);
+        } else {
+          App.toast('Проект сохранён', 'success');
+        }
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Ошибка сохранения', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prevText;
+      }
+    }
+
+    // ============================================================
+    // Синхронизация услуг
+    // ============================================================
+    async function syncServices(slug) {
+      for (let i = 0; i < state.services.length; i++) {
+        const s = state.services[i];
+
+        if (s._deleted && !s._isNew) {
+          try { await App.deleteService(s.id); } catch (e) { console.error(e); }
+          continue;
+        }
+        if (s._deleted && s._isNew) continue;
+
+        if (!s.name || !s.name.trim()) continue;
+
+        const payload = {
+          project_id: slug,
+          name: s.name.trim(),
+          price: s.price == null || isNaN(s.price) ? null : Number(s.price),
+          duration_minutes: Number(s.duration_minutes) || 60,
+          image_url: s.image_url || null,
+          description: s.description || null,
+          sort_order: i
+        };
+
+        try {
+          if (s._isNew) {
+            await App.createService({ id: s.id, ...payload });
+          } else {
+            await App.updateService(s.id, payload);
+          }
+        } catch (err) {
+          console.error('service sync', err);
+          App.toast('Ошибка сохранения услуги: ' + (err.message || ''), 'error');
+        }
+      }
+    }
+
+    // ============================================================
+    // Результат создания
+    // ============================================================
+    function showResult(slug, login, password) {
+      const url = location.origin + '/booking.html?b=' + encodeURIComponent(slug);
+      const creds = 'ID: ' + slug + '\nЛогин: ' + login + '\nПароль: ' + password;
+
+      $('#rm-link').value = url;
+      $('#rm-creds').value = creds.replace(/\n/g, ' · ');
+
+      $('#rm-copy-link').onclick = async function () {
+        const ok = await App.copyToClipboard(url);
+        App.toast(ok ? 'Ссылка скопирована' : 'Не удалось', ok ? 'success' : 'error');
+      };
+      $('#rm-copy-creds').onclick = async function () {
+        const ok = await App.copyToClipboard(creds);
+        App.toast(ok ? 'Данные скопированы' : 'Не удалось', ok ? 'success' : 'error');
+      };
+
+      openModal('result-modal');
+    }
+
+    // ============================================================
+    // Закрытие модалок
+    // ============================================================
+    document.querySelectorAll('[data-close]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const modal = btn.closest('.modal-backdrop');
+        if (modal) modal.classList.remove('is-open');
+      });
+    });
+
+    document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+      bd.addEventListener('click', function (e) {
+        if (e.target === bd) bd.classList.remove('is-open');
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop.is-open').forEach(function (m) {
+          m.classList.remove('is-open');
+        });
+      }
+    });
+
+  })();
+  </script>
+</body>
+</html>
