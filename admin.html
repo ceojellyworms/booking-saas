@@ -237,7 +237,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 
   <script>
   (function () {
@@ -267,8 +267,7 @@
       socials: [],
       editingService: null,
       pendingServiceImage: null,
-      bookingsChannel: null,
-      projectChannel: null
+      bookingsRefreshTimer: null
     };
 
     // ============================================================
@@ -307,7 +306,7 @@
       await loadBookings();
       await loadServices();
 
-      subscribeRealtime();
+      startBookingsRefresh();
 
       wireEvents();
     })();
@@ -384,39 +383,39 @@
     }
 
     // ============================================================
-    // REALTIME
+    // SECURE REFRESH
     // ============================================================
-    function subscribeRealtime() {
-      // Заявки
-      state.bookingsChannel = App.subscribeBookings(state.slug, {
-        onInsert: function (row) {
-          state.bookings.unshift(row);
+    function startBookingsRefresh() {
+      let refreshInProgress = false;
+      async function refresh(announceNewBookings) {
+        if (refreshInProgress) return;
+        refreshInProgress = true;
+        try {
+          const bookings = await App.listBookings(state.slug);
+          const previousIds = new Set(state.bookings.map(function (booking) {
+            return String(booking.id);
+          }));
+          const newBookings = bookings.filter(function (booking) {
+            return !previousIds.has(String(booking.id));
+          });
+          state.bookings = bookings;
           renderBookings();
-          App.playNotificationSound();
-          App.toast('Новая заявка: ' + (row.client_name || '') , 'success');
-        },
-        onUpdate: function (row) {
-          const i = state.bookings.findIndex(function (b) { return b.id === row.id; });
-          if (i >= 0) state.bookings[i] = row;
-          else state.bookings.unshift(row);
-          renderBookings();
-        },
-        onDelete: function (old) {
-          state.bookings = state.bookings.filter(function (b) { return b.id !== old.id; });
-          renderBookings();
-        }
-      });
-
-      // Услуги + проект
-      state.projectChannel = App.subscribeProject(state.slug, {
-        onService: function () { loadServices(); },
-        onProject: function (payload) {
-          if (payload && payload.new) {
-            state.project = payload.new;
-            applyProjectToUI(state.project);
-            App.applyTheme(state.project);
+          if (announceNewBookings && newBookings.length) {
+            App.playNotificationSound();
+            App.toast('Новая заявка: ' + (newBookings[0].client_name || ''), 'success');
           }
+        } catch (err) {
+          console.error('Unable to refresh bookings.', err);
+        } finally {
+          refreshInProgress = false;
         }
+      }
+
+      state.bookingsRefreshTimer = window.setInterval(function () {
+        if (document.visibilityState === 'visible') refresh(true);
+      }, 15000);
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') refresh(false);
       });
     }
 
@@ -780,11 +779,23 @@
       if (!name) { App.toast('Укажите название бизнеса', 'error'); return; }
 
       const socials = {};
+      let invalidSocialUrl = false;
       state.socials.forEach(function (s) {
         const n = (s.name || '').trim();
         const u = (s.url || '').trim();
-        if (n && u) socials[n] = u;
+        if (n && u) {
+          const safeUrl = App.safeHttpUrl(u);
+          if (!safeUrl) {
+            invalidSocialUrl = true;
+            return;
+          }
+          socials[n] = safeUrl;
+        }
       });
+      if (invalidSocialUrl) {
+        App.toast('Ссылки соцсетей должны начинаться с http:// или https://', 'error');
+        return;
+      }
 
       const patch = {
         business_name: name,

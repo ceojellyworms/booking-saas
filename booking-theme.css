@@ -173,8 +173,8 @@
   user-select: none;
 }
 
-.showcase-glass.is-dragging .glass-cube {
-  will-change: transform;
+.showcase-glass.is-dragging .glass-tesseract {
+  will-change: contents;
 }
 
 .glass-orbit {
@@ -185,40 +185,28 @@
   transform: rotateX(67deg) rotateZ(-24deg);
 }
 
-.glass-cube {
-  --cube-depth: clamp(40px, 7vw, 86px);
+.glass-tesseract {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 64%;
-  height: 64%;
-  transform:
-    translate(-50%, -50%)
-    rotateX(var(--cube-rotate-x, -22deg))
-    rotateY(var(--cube-rotate-y, -34deg))
-    rotateZ(var(--cube-rotate-z, 13deg));
-  transform-style: preserve-3d;
-  will-change: transform;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 12px rgba(210, 230, 255, .23));
 }
 
-.cube-face {
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(255, 255, 255, .62);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .015) 48%, rgba(255, 255, 255, .12)),
-    rgba(190, 205, 220, .08);
-  box-shadow: inset 0 0 24px rgba(255, 255, 255, .09), 0 0 30px rgba(255, 255, 255, .035);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+.glass-tesseract line {
+  stroke: rgba(232, 241, 255, .9);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 
-.cube-front { transform: translateZ(var(--cube-depth)); }
-.cube-back { transform: rotateY(180deg) translateZ(var(--cube-depth)); }
-.cube-right { transform: rotateY(90deg) translateZ(var(--cube-depth)); }
-.cube-left { transform: rotateY(-90deg) translateZ(var(--cube-depth)); }
-.cube-top { transform: rotateX(90deg) translateZ(var(--cube-depth)); }
-.cube-bottom { transform: rotateX(-90deg) translateZ(var(--cube-depth)); }
+.glass-tesseract circle {
+  fill: #f4f8ff;
+  filter: drop-shadow(0 0 3px rgba(226, 239, 255, .8));
+}
 
 .booking-page .banner {
   min-height: 164px;
@@ -705,13 +693,9 @@
   }
 
   .showcase-glass {
-    right: -8px;
+    right: 14px;
     width: clamp(118px, 40vw, 170px);
-    opacity: .82;
-  }
-
-  .glass-cube {
-    --cube-depth: clamp(38px, 12.8vw, 54px);
+    opacity: .9;
   }
 
   .showcase-index {

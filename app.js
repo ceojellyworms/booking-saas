@@ -20,8 +20,14 @@
     if (!window.supabase || typeof window.supabase.createClient !== 'function') {
       throw new Error('supabase-js SDK не загружен. Проверь <script> перед app.js');
     }
+    const session = getSession();
+    const headers = {};
+    if (session && session.token) {
+      headers['x-admin-session-token'] = session.token;
+    }
     _client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false }
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: headers }
     });
     return _client;
   }
@@ -38,6 +44,15 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function safeHttpUrl(value) {
+    try {
+      const url = new URL(String(value || '').trim(), window.location.origin);
+      return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+    } catch (error) {
+      return null;
+    }
   }
 
   function uuid() {
@@ -189,7 +204,10 @@
       const raw = localStorage.getItem(SESSION_STORAGE_KEY);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      if (!s.token) return null;
+      if (typeof s.token !== 'string' ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.token)) {
+        return null;
+      }
       if (s.expires_at && new Date(s.expires_at) < new Date()) {
         localStorage.removeItem(SESSION_STORAGE_KEY);
         return null;
@@ -203,6 +221,7 @@
   function clearSession() {
     localStorage.removeItem(SESSION_STORAGE_KEY);
     localStorage.removeItem(SUPER_ADMIN_FLAG);
+    _client = null;
   }
 
   function isSuperAdmin() {
@@ -213,28 +232,28 @@
     localStorage.setItem(SUPER_ADMIN_FLAG, '1');
   }
 
-  async function createSession(projectId) {
-    const token = uuid();
-    const expiresAt = new Date(Date.now() + SESSION_TTL_HOURS * 3600 * 1000).toISOString();
-    const { error } = await getClient()
-      .from('admin_sessions')
-      .insert({ token: token, project_id: projectId, expires_at: expiresAt });
+  async function createSession(projectId, login, password) {
+    const { data, error } = await getClient().rpc('create_admin_session', {
+      p_project_id: projectId,
+      p_login: login,
+      p_password: password
+    });
     if (error) throw error;
-    saveSession(token, projectId, expiresAt);
-    return token;
+    if (!data || typeof data.token !== 'string' || !data.expires_at) return false;
+    saveSession(data.token, data.project_id, data.expires_at);
+    _client = null;
+    return data.token;
   }
 
   async function validateSession(projectId) {
     const s = getSession();
     if (!s) return false;
-    const { data, error } = await getClient()
-      .from('admin_sessions')
-      .select('token, project_id, expires_at')
-      .eq('token', s.token)
-      .maybeSingle();
-    if (error || !data) { clearSession(); return false; }
-    if (new Date(data.expires_at) < new Date()) { clearSession(); return false; }
-    if (projectId && data.project_id && data.project_id !== projectId) return false;
+    const { data, error } = await getClient().rpc('validate_admin_session', {
+      p_token: s.token,
+      p_project_id: projectId || null
+    });
+    if (error) throw error;
+    if (!data) { clearSession(); return false; }
     return true;
   }
 
@@ -243,26 +262,15 @@
   // ============================================================
 
   async function loginProject(projectId, login, password) {
-    const { data, error } = await getClient().rpc('verify_project_admin', {
-      p_project_id: projectId,
-      p_login: login,
-      p_password: password
-    });
-    if (error) throw error;
-    if (!data) return false;
+    const token = await createSession(projectId, login, password);
+    if (!token) return false;
     localStorage.removeItem(SUPER_ADMIN_FLAG);
-    await createSession(projectId);
     return true;
   }
 
   async function loginSuperAdmin(login, password) {
-    const { data, error } = await getClient().rpc('verify_super_admin', {
-      p_login: login,
-      p_password: password
-    });
-    if (error) throw error;
-    if (!data) return false;
-    await createSession(null);
+    const token = await createSession(null, login, password);
+    if (!token) return false;
     setSuperAdminFlag();
     return true;
   }
@@ -277,7 +285,7 @@
 
     if (projectHint) {
       const { data, error } = await client
-        .from('projects')
+        .from('projects_public')
         .select('id')
         .eq('id', projectHint)
         .eq('is_active', true)
@@ -287,7 +295,7 @@
     }
 
     const { data: projects, error } = await client
-      .from('projects')
+      .from('projects_public')
       .select('id')
       .eq('is_active', true);
     if (error) throw error;
@@ -338,7 +346,7 @@
 
   async function getProject(slug) {
     const { data, error } = await getClient()
-      .from('projects')
+      .from('projects_public')
       .select('*')
       .eq('id', slug)
       .eq('is_active', true)
@@ -349,7 +357,7 @@
 
   async function listProjects() {
     const { data, error } = await getClient()
-      .from('projects')
+      .from('projects_public')
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -359,7 +367,7 @@
   async function createProject(payload) {
     // payload: { id, business_name, admin_login, admin_password,
     //            phone?, address?, accent_color?, background_color? }
-    const { error } = await getClient().rpc('create_project', {
+    const { error } = await getClient().rpc('admin_create_project', {
       p_id: payload.id,
       p_business_name: payload.business_name,
       p_admin_login: payload.admin_login,
@@ -384,14 +392,14 @@
       .from('projects')
       .update(patch)
       .eq('id', slug)
-      .select()
+      .select('id')
       .maybeSingle();
     if (error) throw error;
     return data;
   }
 
   async function updateProjectPassword(slug, newPassword) {
-    const { error } = await getClient().rpc('update_project_password', {
+    const { error } = await getClient().rpc('admin_update_project_password', {
       p_id: slug,
       p_new_password: newPassword
     });
@@ -406,7 +414,7 @@
   // Служебная — вернуть проект без фильтра is_active (для super.html)
   async function getProjectAny(slug) {
     const { data, error } = await getClient()
-      .from('projects')
+      .from('projects_public')
       .select('*')
       .eq('id', slug)
       .maybeSingle();
@@ -472,9 +480,7 @@
   async function createBooking(payload) {
     const { data, error } = await getClient()
       .from('bookings')
-      .insert(payload)
-      .select()
-      .maybeSingle();
+      .insert(payload);
     if (error) throw error;
     return data;
   }
@@ -581,6 +587,7 @@
 
     // утилиты
     escapeHtml: escapeHtml,
+    safeHttpUrl: safeHttpUrl,
     uuid: uuid,
     getUrlParam: getUrlParam,
     formatDate: formatDate,

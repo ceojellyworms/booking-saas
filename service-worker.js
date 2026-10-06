@@ -1,11 +1,11 @@
 'use strict';
 
-const CACHE_NAME = 'kamidere-booking-shell-v2';
+const CACHE_NAME = 'kamidere-booking-shell-v3';
 const APP_SHELL = [
   './booking.html',
   './styles.css',
-  './booking-theme.css',
-  './app.js',
+  './booking-theme.css?v=3',
+  './app.js?v=3',
   './config.js',
   './icon.svg'
 ];
@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-cache' })
         .then(async (response) => {
           if (response.ok) {
             const copy = response.clone();
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
     || requestUrl.pathname.endsWith('/booking-theme.css')
     || requestUrl.pathname.endsWith('/icon.svg')) {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-cache' })
         .then(async (response) => {
           if (!response.ok) return response;
           const copy = response.clone();

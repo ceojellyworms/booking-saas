@@ -221,7 +221,7 @@
   <!-- SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 
   <script>
   (function () {
@@ -866,11 +866,23 @@
 
       // Соцсети → объект
       const socials = {};
+      let invalidSocialUrl = false;
       state.socials.forEach(function (s) {
         const n = (s.name || '').trim();
         const u = (s.url || '').trim();
-        if (n && u) socials[n] = u;
+        if (n && u) {
+          const safeUrl = App.safeHttpUrl(u);
+          if (!safeUrl) {
+            invalidSocialUrl = true;
+            return;
+          }
+          socials[n] = safeUrl;
+        }
       });
+      if (invalidSocialUrl) {
+        App.toast('Ссылки соцсетей должны начинаться с http:// или https://', 'error');
+        return;
+      }
 
       const patch = {
         phone: phone || null,
