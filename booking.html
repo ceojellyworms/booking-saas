@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Онлайн-запись</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- ============ TOPBAR ============ -->
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <div class="topbar-brand" id="brand">
+          <span class="dot"></span>
+          <img id="brand-logo" class="hidden" alt="" />
+          <span id="brand-name">Загрузка…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <div class="container">
+
+        <!-- ============ BANNER ============ -->
+        <section class="banner animate-in" id="banner">
+          <div class="banner-content">
+            <div class="banner-logo" id="banner-logo"><span class="muted">◆</span></div>
+            <div>
+              <div class="banner-title" id="banner-name">Загрузка…</div>
+              <div class="banner-sub" id="banner-sub"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ SERVICES ============ -->
+        <section class="mt-3 animate-in-delay-1" id="services-section">
+          <h2>Выберите услугу</h2>
+          <div class="services" id="services-list">
+            <div class="empty">Загрузка услуг…</div>
+          </div>
+        </section>
+
+        <!-- ============ BOOKING FORM ============ -->
+        <section class="mt-3 animate-in-delay-2" id="form-section" style="display:none">
+          <div class="card card-lg">
+            <h2>Запись</h2>
+            <p class="muted small" id="form-selected-service"></p>
+
+            <form class="booking-form" id="booking-form" autocomplete="off" novalidate>
+
+              <div class="field">
+                <label for="bf-name">Ваше имя *</label>
+                <input class="input" id="bf-name" type="text" required />
+              </div>
+
+              <div class="field">
+                <label for="bf-phone">Телефон *</label>
+                <input class="input" id="bf-phone" type="tel" placeholder="+7 (___) ___-__-__" required />
+              </div>
+
+              <div class="row-2">
+                <div class="field">
+                  <label for="bf-date">Дата *</label>
+                  <input class="input" id="bf-date" type="date" required />
+                </div>
+                <div class="field">
+                  <label for="bf-time">Время *</label>
+                  <input class="input" id="bf-time" type="time" required />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="bf-car">Автомобиль (если актуально)</label>
+                <input class="input" id="bf-car" type="text" placeholder="Например, Toyota Camry, А123БВ" />
+              </div>
+
+              <div class="field">
+                <label for="bf-notes">Комментарий</label>
+                <textarea class="textarea" id="bf-notes" rows="3" placeholder="Что-то важное для мастера?"></textarea>
+              </div>
+
+              <div class="row row-between mt-2">
+                <button class="btn" type="button" id="bf-cancel">Отмена</button>
+                <button class="btn btn-primary btn-lg" type="submit" id="bf-submit">
+                  Записаться
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ============ THANK YOU ============ -->
+        <section class="thankyou" id="thankyou-section" style="display:none">
+          <div class="thankyou-icon">✓</div>
+          <h2>Спасибо, заявка принята!</h2>
+          <p class="muted" id="thankyou-text">
+            Мы свяжемся с вами для подтверждения записи.
+          </p>
+          <button class="btn mt-2" type="button" id="th-again">Записаться ещё раз</button>
+        </section>
+
+        <!-- ============ CONTACTS ============ -->
+        <section class="mt-3 animate-in-delay-3" id="contacts-section">
+          <div class="card">
+            <h3>Контакты и часы работы</h3>
+            <div id="contacts-list" class="col"></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span class="muted small">© <span id="footer-year"></span> <span id="footer-name"></span> · kamidere</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const $ = function (s) { return document.querySelector(s); };
+
+    const state = {
+      slug: null,
+      project: null,
+      services: [],
+      selectedService: null
+    };
+
+    // ============================================================
+    // BOOT
+    // ============================================================
+    (async function boot() {
+      const slug = App.getUrlParam('b');
+      if (!slug) {
+        renderFatal('Не указан ID проекта. Откройте страницу по ссылке от бизнеса.');
+        return;
+      }
+      state.slug = slug;
+
+      try {
+        const project = await App.getProject(slug);
+        if (!project) {
+          renderFatal('Проект не найден или отключён.');
+          return;
+        }
+        state.project = project;
+        applyProject(project);
+        await loadServices();
+        renderContacts(project);
+        wireForm();
+
+        $('#footer-year').textContent = new Date().getFullYear();
+        $('#footer-name').textContent = project.business_name || '';
+        document.title = (project.business_name || 'Онлайн-запись') + ' — запись онлайн';
+      } catch (err) {
+        console.error(err);
+        renderFatal('Ошибка загрузки: ' + (err.message || ''));
+      }
+    })();
+
+    // ============================================================
+    // FATAL
+    // ============================================================
+    function renderFatal(msg) {
+      const main = document.querySelector('main .container');
+      main.innerHTML = '<div class="empty" style="margin-top:40px">' + App.escapeHtml(msg) + '</div>';
+    }
+
+    // ============================================================
+    // APPLY PROJECT
+    // ============================================================
+    function applyProject(p) {
+      App.applyTheme(p);
+
+      $('#brand-name').textContent = p.business_name || '';
+
+      const brandLogo = $('#brand-logo');
+      const bannerLogo = $('#banner-logo');
+
+      if (p.logo_url) {
+        brandLogo.src = p.logo_url;
+        brandLogo.classList.remove('hidden');
+        bannerLogo.innerHTML = '<img src="' + App.escapeHtml(p.logo_url) + '" alt="" />';
+      }
+
+      $('#banner-name').textContent = p.business_name || '';
+
+      // Подзаголовок баннера — телефон, если есть
+      const subParts = [];
+      if (p.phone) subParts.push(p.phone);
+      if (p.address) subParts.push(p.address);
+      $('#banner-sub').textContent = subParts.join(' · ');
+
+      // Баннер: если есть картинка — накладываем градиент акцента сверху
+      if (p.banner_url) {
+        const accent = p.accent_color || '#ef4444';
+        $('#banner').style.backgroundImage =
+          'linear-gradient(135deg, ' + accent + ', rgba(0,0,0,0.6)), url(' + p.banner_url + ')';
+        $('#banner').style.backgroundSize = 'cover';
+        $('#banner').style.backgroundPosition = 'center';
+      }
+    }
+
+    // ============================================================
+    // SERVICES
+    // ============================================================
+    async function loadServices() {
+      const wrap = $('#services-list');
+      try {
+        state.services = await App.listServices(state.slug);
+      } catch (err) {
+        console.error(err);
+        wrap.innerHTML = '<div class="empty">Не удалось загрузить услуги</div>';
+        return;
+      }
+
+      if (!state.services.length) {
+        wrap.innerHTML = '<div class="empty">Список услуг пока пуст</div>';
+        $('#form-section').style.display = 'block';
+        $('#form-selected-service').textContent = 'Запись без выбора услуги';
+        return;
+      }
+
+      wrap.innerHTML = state.services.map(function (s) {
+        const img = s.image_url
+          ? '<img src="' + App.escapeHtml(s.image_url) + '" alt="" />'
+          : '<span class="placeholder">◆</span>';
+        const price = s.price != null ? App.formatMoney(s.price) : '';
+        const dur = (s.duration_minutes || 60) + ' мин';
+
+        return ''
+          + '<div class="service-card" data-id="' + App.escapeHtml(s.id) + '">'
+          +   '<div class="service-image">' + img + '</div>'
+          +   '<div class="service-body">'
+          +     '<div class="service-name">' + App.escapeHtml(s.name) + '</div>'
+          +     '<div class="service-meta">'
+          +       (price ? '<span class="service-price">' + price + '</span><span>·</span>' : '')
+          +       '<span>' + dur + '</span>'
+          +     '</div>'
+          +     (s.description ? '<div class="service-desc">' + App.escapeHtml(s.description) + '</div>' : '')
+          +   '</div>'
+          + '</div>';
+      }).join('');
+
+      wrap.querySelectorAll('.service-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+          const id = card.getAttribute('data-id');
+          selectService(id);
+        });
+      });
+    }
+
+    function selectService(id) {
+      const svc = state.services.find(function (s) { return s.id === id; });
+      if (!svc) return;
+      state.selectedService = svc;
+
+      document.querySelectorAll('.service-card').forEach(function (c) {
+        c.classList.toggle('is-selected', c.getAttribute('data-id') === id);
+      });
+
+      $('#form-section').style.display = 'block';
+      $('#form-selected-service').textContent =
+        'Услуга: ' + svc.name + (svc.price != null ? ' · ' + App.formatMoney(svc.price) : '');
+
+      // Скролл к форме
+      $('#form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Фокус на первое поле
+      setTimeout(function () { $('#bf-name').focus(); }, 350);
+    }
+
+    // ============================================================
+    // CONTACTS
+    // ============================================================
+    function renderContacts(p) {
+      const wrap = $('#contacts-list');
+      const rows = [];
+
+      if (p.phone) {
+        rows.push(
+          '<div class="row"><span class="muted" style="flex:0 0 110px">Телефон</span>'
+          + '<a href="tel:' + App.escapeHtml(p.phone.replace(/[^\d+]/g, '')) + '">' + App.escapeHtml(p.phone) + '</a></div>'
+        );
+      }
+      if (p.address) {
+        rows.push(
+          '<div class="row"><span class="muted" style="flex:0 0 110px">Адрес</span>'
+          + '<span>' + App.escapeHtml(p.address) + '</span></div>'
+        );
+      }
+
+      const wh = p.work_hours;
+      if (wh && (wh.start || wh.end || (wh.days && wh.days.length))) {
+        const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+        const days = (wh.days || []).slice().sort(function (a, b) { return a - b; });
+        const daysStr = days.length ? days.map(function (d) { return dayNames[d]; }).join(', ') : '—';
+        rows.push(
+          '<div class="row"><span class="muted" style="flex:0 0 110px">Часы</span>'
+          + '<span>' + App.escapeHtml(daysStr) + ' · ' + App.escapeHtml(wh.start || '') + '–' + App.escapeHtml(wh.end || '') + '</span></div>'
+        );
+      }
+
+      const sl = p.social_links || {};
+      Object.keys(sl).forEach(function (name) {
+        const url = sl[name];
+        if (!url) return;
+        rows.push(
+          '<div class="row"><span class="muted" style="flex:0 0 110px">' + App.escapeHtml(name) + '</span>'
+          + '<a href="' + App.escapeHtml(url) + '" target="_blank" rel="noopener">' + App.escapeHtml(url) + '</a></div>'
+        );
+      });
+
+      if (!rows.length) {
+        wrap.innerHTML = '<p class="muted small mb-0">Контактная информация не указана.</p>';
+        return;
+      }
+      wrap.innerHTML = rows.join('');
+    }
+
+    // ============================================================
+    // FORM
+    // ============================================================
+    function wireForm() {
+      // Дата: не раньше сегодня
+      const dateInput = $('#bf-date');
+      const today = new Date().toISOString().slice(0, 10);
+      dateInput.min = today;
+      dateInput.value = today;
+
+      // Время по умолчанию — из рабочих часов
+      const wh = state.project.work_hours || {};
+      if (wh.start) $('#bf-time').value = wh.start;
+
+      $('#bf-cancel').addEventListener('click', resetForm);
+      $('#th-again').addEventListener('click', function () {
+        $('#thankyou-section').style.display = 'none';
+        $('#services-section').style.display = '';
+        $('#form-section').style.display = 'none';
+        $('#contacts-section').style.display = '';
+        state.selectedService = null;
+        document.querySelectorAll('.service-card').forEach(function (c) { c.classList.remove('is-selected'); });
+        resetForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      $('#booking-form').addEventListener('submit', submitBooking);
+    }
+
+    function resetForm() {
+      const f = $('#booking-form');
+      f.reset();
+      const today = new Date().toISOString().slice(0, 10);
+      $('#bf-date').value = today;
+      const wh = state.project.work_hours || {};
+      if (wh.start) $('#bf-time').value = wh.start;
+    }
+
+    // ============================================================
+    // SUBMIT
+    // ============================================================
+    async function submitBooking(e) {
+      e.preventDefault();
+
+      const name = $('#bf-name').value.trim();
+      const phone = $('#bf-phone').value.trim();
+      const date = $('#bf-date').value;
+      const time = $('#bf-time').value;
+      const car = $('#bf-car').value.trim();
+      const notes = $('#bf-notes').value.trim();
+
+      if (!name) { App.toast('Укажите ваше имя', 'error'); $('#bf-name').focus(); return; }
+      if (!phone) { App.toast('Укажите телефон', 'error'); $('#bf-phone').focus(); return; }
+      if (!/^[\d\s+\-()]{5,}$/.test(phone)) {
+        App.toast('Проверьте формат телефона', 'error'); $('#bf-phone').focus(); return;
+      }
+      if (!date) { App.toast('Выберите дату', 'error'); $('#bf-date').focus(); return; }
+      if (!time) { App.toast('Выберите время', 'error'); $('#bf-time').focus(); return; }
+
+      const wh = state.project.work_hours || {};
+      if (wh.start && wh.end && (time < wh.start || time > wh.end)) {
+        App.toast('Мы работаем с ' + wh.start + ' до ' + wh.end, 'error');
+        $('#bf-time').focus();
+        return;
+      }
+
+      const payload = {
+        project_id: state.slug,
+        client_name: name,
+        client_phone: phone,
+        service_id: state.selectedService ? state.selectedService.id : null,
+        service_name: state.selectedService ? state.selectedService.name : null,
+        booking_date: date,
+        booking_time: time,
+        car_info: car || null,
+        notes: notes || null,
+        status: 'new'
+      };
+
+      const btn = $('#bf-submit');
+      btn.disabled = true;
+      const prev = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span> Отправка…';
+
+      try {
+        await App.createBooking(payload);
+        showThankYou(name);
+      } catch (err) {
+        console.error(err);
+        App.toast(err.message || 'Не удалось отправить заявку', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    }
+
+    function showThankYou(name) {
+      $('#services-section').style.display = 'none';
+      $('#form-section').style.display = 'none';
+      $('#contacts-section').style.display = 'none';
+
+      const t = $('#thankyou-text');
+      const p = state.project;
+      const parts = ['Мы свяжемся с вами'];
+      if (p.phone) parts.push('по телефону ' + p.phone);
+      parts.push('для подтверждения записи.');
+      t.textContent = name + ', ' + parts.join(' ');
+
+      $('#thankyou-section').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+  })();
+  </script>
+</body>
+</html>
