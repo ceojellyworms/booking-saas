@@ -23,6 +23,7 @@
         </div>
         <div class="row gap-1">
           <button class="btn btn-primary btn-sm" id="btn-new-project">+ Создать проект</button>
+          <button class="btn btn-sm" id="btn-import-excel">Импорт Excel</button>
           <button class="btn btn-sm btn-ghost" id="btn-logout">Выйти</button>
         </div>
       </div>
@@ -31,12 +32,19 @@
     <main class="page-main">
       <div class="container">
 
-        <div class="row row-between mb-3">
+        <div class="row row-between mb-2">
           <div>
             <h1 class="mb-0">Проекты</h1>
             <p class="muted small mb-0" id="projects-count">Загрузка…</p>
           </div>
           <button class="btn" id="btn-refresh">Обновить</button>
+        </div>
+
+        <div class="field mb-3">
+          <label for="projects-search">Поиск по компаниям</label>
+          <input class="input" id="projects-search" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="Название, slug, телефон, Telegram…" />
+          <span class="field-hint">Поиск работает по названию компании, slug, логину, телефону, названию Telegram-ссылки и самой ссылке.</span>
         </div>
 
         <div class="projects-list" id="projects-list">
@@ -228,7 +236,122 @@
     </div>
   </div>
 
+  <!-- ============ МОДАЛКА: ДАННЫЕ ВХОДА ============ -->
+  <div class="modal-backdrop" id="credentials-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title">Данные входа</h3>
+        <button class="modal-close" type="button" data-close>&times;</button>
+      </div>
+
+      <div class="field">
+        <label for="cm-business">Компания</label>
+        <input class="input" id="cm-business" readonly />
+      </div>
+      <div class="field">
+        <label for="cm-link">Ссылка для клиентов</label>
+        <div class="row">
+          <input class="input flex-1" id="cm-link" readonly />
+          <button class="btn btn-sm" type="button" id="cm-copy-link">Копировать</button>
+        </div>
+      </div>
+      <div class="grid grid-2">
+        <div class="field">
+          <label for="cm-login">Логин</label>
+          <input class="input" id="cm-login" readonly />
+        </div>
+        <div class="field">
+          <label for="cm-password">Пароль</label>
+          <div class="row">
+            <input class="input flex-1" id="cm-password" type="password" readonly />
+            <button class="btn btn-sm" type="button" id="cm-toggle-password">Показать</button>
+          </div>
+        </div>
+      </div>
+      <div class="muted small" id="cm-hint"></div>
+
+      <div class="row row-between mt-2">
+        <button class="btn" type="button" id="cm-copy-creds">Скопировать всё</button>
+        <button class="btn btn-primary" type="button" data-close>Готово</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ МОДАЛКА: ИМПОРТ EXCEL ============ -->
+  <div class="modal-backdrop" id="excel-import-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title">Импорт компаний из Excel</h3>
+        <button class="modal-close" type="button" data-close>&times;</button>
+      </div>
+
+      <p class="muted small mb-2">
+        Формат текущей таблицы: B — название, C — услуги через «;», D — адрес, H — телефон, K — Telegram.
+        WhatsApp (J), рейтинг/отзывы и остальные поля не переносятся.
+      </p>
+
+      <div class="field">
+        <label for="excel-file">Excel-файл</label>
+        <input class="input" id="excel-file" type="file" accept=".xlsx,.xls,.csv" />
+        <span class="field-hint" id="excel-file-hint">Выберите файл .xlsx</span>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="field">
+          <label for="excel-default-price">Цена услуг по умолчанию</label>
+          <input class="input" id="excel-default-price" type="number" min="0" step="1" value="999" />
+        </div>
+        <div class="field">
+          <label for="excel-default-duration">Длительность услуг (мин.)</label>
+          <input class="input" id="excel-default-duration" type="number" min="5" step="5" value="60" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Автоматические настройки</label>
+        <div class="muted small">
+          Направление: «Авто — Автосервисы» · график: Пн–Сб, 09:00–20:00 · шаг записи: 30 минут · логин = slug · пароль генерируется автоматически.
+        </div>
+      </div>
+
+      <div class="field" id="excel-preview-wrap" style="display:none">
+        <label>Предпросмотр</label>
+        <div id="excel-preview" style="overflow:auto;max-height:280px;border:1px solid rgba(255,255,255,.1);border-radius:12px"></div>
+      </div>
+
+      <div class="field" id="excel-progress-wrap" style="display:none">
+        <label>Импорт</label>
+        <div id="excel-progress" class="muted small"></div>
+        <div style="height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:8px">
+          <div id="excel-progress-bar" style="height:100%;width:0%;background:var(--accent);transition:width .2s ease"></div>
+        </div>
+      </div>
+
+      <div class="row row-between mt-2">
+        <button class="btn" type="button" data-close>Отмена</button>
+        <button class="btn btn-primary" type="button" id="btn-run-excel-import" disabled>Создать компании</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ МОДАЛКА: ОТЧЁТ ИМПОРТА ============ -->
+  <div class="modal-backdrop" id="excel-result-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title">Результат импорта</h3>
+        <button class="modal-close" type="button" data-close>&times;</button>
+      </div>
+      <div id="excel-result-summary" class="muted small mb-2"></div>
+      <div id="excel-result-table" style="overflow:auto;max-height:420px;border:1px solid rgba(255,255,255,.1);border-radius:12px"></div>
+      <div class="row row-between mt-2">
+        <button class="btn" type="button" id="btn-copy-import-report">Скопировать отчёт</button>
+        <button class="btn btn-primary" type="button" data-close>Готово</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SDK -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js?v=7"></script>
@@ -246,7 +369,11 @@
       logoUrl: null,       // текущий URL логотипа (уже загруженного)
       bannerUrl: null,
       services: [],        // { id, _isNew, _deleted, name, price, duration_minutes, image_url, description, _file }
-      socials: []          // [{ name, url }]
+      socials: [],          // [{ name, url }]
+      importRows: [],       // подготовленные строки Excel
+      importReportText: '',
+      searchQuery: '',
+      storedCredentials: {}
     };
 
     const DAYS = [
@@ -389,6 +516,55 @@
     ];
 
     // ============================================================
+    // Сохранённые данные входа (только в браузере супер-админа)
+    // ============================================================
+    const CREDENTIALS_STORAGE_KEY = 'kamidere_super_credentials_v1';
+
+    function loadStoredCredentials() {
+      try {
+        const raw = localStorage.getItem(CREDENTIALS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (err) {
+        console.warn('Не удалось прочитать локальное хранилище данных входа', err);
+        return {};
+      }
+    }
+
+    function persistStoredCredentials() {
+      try {
+        localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify(state.storedCredentials || {}));
+      } catch (err) {
+        console.warn('Не удалось сохранить данные входа в браузере', err);
+      }
+    }
+
+    function rememberCredentials(slug, login, password) {
+      const key = String(slug || '').trim().toLowerCase();
+      if (!key || !password) return;
+      state.storedCredentials[key] = {
+        login: String(login || ''),
+        password: String(password)
+      };
+      persistStoredCredentials();
+    }
+
+    function getStoredCredentials(slug) {
+      const key = String(slug || '').trim().toLowerCase();
+      return state.storedCredentials[key] || null;
+    }
+
+    function forgetCredentials(slug) {
+      const key = String(slug || '').trim().toLowerCase();
+      if (state.storedCredentials[key]) {
+        delete state.storedCredentials[key];
+        persistStoredCredentials();
+      }
+    }
+
+      state.storedCredentials = loadStoredCredentials();
+
+    // ============================================================
     // Утилиты для DOM
     // ============================================================
     const $ = function (sel) { return document.querySelector(sel); };
@@ -445,7 +621,19 @@
         openEditor(null);
       });
 
+      $('#btn-import-excel').addEventListener('click', openExcelImport);
+      $('#btn-run-excel-import').addEventListener('click', runExcelImport);
+      $('#excel-file').addEventListener('change', handleExcelFile);
+      $('#btn-copy-import-report').addEventListener('click', async function () {
+        const ok = await App.copyToClipboard(state.importReportText || '');
+        App.toast(ok ? 'Отчёт скопирован' : 'Не удалось скопировать', ok ? 'success' : 'error');
+      });
+
       $('#btn-refresh').addEventListener('click', loadProjects);
+      $('#projects-search').addEventListener('input', function () {
+        state.searchQuery = this.value || '';
+        renderProjects();
+      });
 
       await loadProjects();
     })();
@@ -464,16 +652,45 @@
       }
     }
 
+    function projectMatchesQuery(project, query) {
+      const q = String(query || '').trim().toLowerCase();
+      if (!q) return true;
+
+      const socialLinks = project && project.social_links && typeof project.social_links === 'object'
+        ? Object.keys(project.social_links).map(function (k) { return k + ' ' + project.social_links[k]; }).join(' ')
+        : '';
+
+      const haystack = [
+        project.business_name,
+        project.id,
+        project.admin_login,
+        project.phone,
+        project.address,
+        socialLinks
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      return haystack.indexOf(q) !== -1;
+    }
+
     function renderProjects() {
       const list = $('#projects-list');
-      $('#projects-count').textContent = 'Всего: ' + state.projects.length;
+      const query = state.searchQuery || '';
+      const filtered = state.projects.filter(function (p) { return projectMatchesQuery(p, query); });
 
-      if (!state.projects.length) {
-        list.innerHTML = '<div class="empty">Пока нет ни одного проекта. Создайте первый.</div>';
+      if (query.trim()) {
+        $('#projects-count').textContent = 'Показано: ' + filtered.length + ' из ' + state.projects.length;
+      } else {
+        $('#projects-count').textContent = 'Всего: ' + state.projects.length;
+      }
+
+      if (!filtered.length) {
+        list.innerHTML = query.trim()
+          ? '<div class="empty">По вашему запросу компании не найдены.</div>'
+          : '<div class="empty">Пока нет ни одного проекта. Создайте первый.</div>';
         return;
       }
 
-      list.innerHTML = state.projects.map(function (p) {
+      list.innerHTML = filtered.map(function (p) {
         const thumb = p.banner_url
           ? 'style="background-image:url(' + App.escapeHtml(p.banner_url) + ')"'
           : '';
@@ -481,6 +698,8 @@
           ? '<img src="' + App.escapeHtml(p.logo_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" />'
           : '<span>◆</span>';
         const inactive = p.is_active ? '' : ' <span class="badge">неактивен</span>';
+        const stored = getStoredCredentials(p.id);
+        const credentialButtonLabel = stored ? 'Данные входа' : 'Пароль не сохранён';
 
         return ''
           + '<div class="card project-card card-hover" data-slug="' + App.escapeHtml(p.id) + '">'
@@ -493,6 +712,7 @@
           +   '</div>'
           +   '<div class="project-actions">'
           +     '<button class="btn btn-sm btn-primary" data-act="open">Открыть админку</button>'
+          +     '<button class="btn btn-sm" data-act="credentials"' + (stored ? '' : ' title="Пароль доступен только для проектов, созданных или изменённых с сохранением в этом браузере"') + '>' + App.escapeHtml(credentialButtonLabel) + '</button>'
           +     '<button class="btn btn-sm" data-act="edit">Редактировать</button>'
           +     '<button class="btn btn-sm" data-act="copy-link">Ссылка</button>'
           +     '<button class="btn btn-sm btn-danger" data-act="delete">Удалить</button>'
@@ -513,6 +733,8 @@
 
           if (act === 'open') {
             window.open('admin.html?b=' + encodeURIComponent(slug), '_blank');
+          } else if (act === 'credentials') {
+            showCredentials(project);
           } else if (act === 'edit') {
             openEditor(project);
           } else if (act === 'copy-link') {
@@ -531,6 +753,7 @@
       if (!ok) return;
       try {
         await App.deleteProject(project.id);
+        forgetCredentials(project.id);
         App.toast('Проект удалён', 'success');
         await loadProjects();
       } catch (err) {
@@ -966,6 +1189,10 @@
           });
         }
 
+        if (password) {
+          rememberCredentials(slug, login, password);
+        }
+
         await syncServices(slug);
         await loadProjects();
 
@@ -1021,6 +1248,438 @@
           App.toast('Ошибка сохранения услуги: ' + (err.message || ''), 'error');
         }
       }
+    }
+
+    // ============================================================
+    // Импорт Excel
+    // ============================================================
+    function openExcelImport() {
+      if (typeof XLSX === 'undefined') {
+        App.toast('Не загрузилась библиотека Excel. Проверь интернет-соединение.', 'error');
+        return;
+      }
+      state.importRows = [];
+      state.importReportText = '';
+      $('#excel-file').value = '';
+      $('#excel-file-hint').textContent = 'Выберите файл .xlsx';
+      $('#excel-preview-wrap').style.display = 'none';
+      $('#excel-progress-wrap').style.display = 'none';
+      $('#excel-progress').textContent = '';
+      $('#excel-progress-bar').style.width = '0%';
+      $('#btn-run-excel-import').disabled = true;
+      $('#btn-run-excel-import').textContent = 'Создать компании';
+      openModal('excel-import-modal');
+    }
+
+    function transliterateRu(value) {
+      const map = {
+        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
+        'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh',
+        'ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'
+      };
+      return String(value || '').toLowerCase().split('').map(function (ch) {
+        return Object.prototype.hasOwnProperty.call(map, ch) ? map[ch] : ch;
+      }).join('');
+    }
+
+    function slugifyCompanyName(value) {
+      let s = transliterateRu(String(value || '').normalize('NFKD'))
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/&/g, '-and-')
+        .replace(/\+/g, '-plus-')
+        .replace(/['’`]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-');
+      return s || 'company';
+    }
+
+    function makeUniqueSlug(name, used) {
+      const base = slugifyCompanyName(name);
+      let slug = base;
+      let n = 2;
+      while (used.has(slug)) {
+        slug = base + '-' + n;
+        n += 1;
+      }
+      used.add(slug);
+      return slug;
+    }
+
+    function normalizeImportUrl(value) {
+      let u = String(value || '').trim();
+      if (!u) return '';
+      if (/^t\.me\//i.test(u)) u = 'https://' + u;
+      if (/^telegram\.me\//i.test(u)) u = 'https://' + u;
+      const safe = App.safeHttpUrl(u);
+      return safe || '';
+    }
+
+    function normalizeImportPhone(value) {
+      const digits = App.getRussianPhoneDigits(value);
+      if (digits.length === 11 && digits.charAt(0) === '8') {
+        return '+7 ' + digits.slice(1);
+      }
+      if (digits.length === 10 && /^[79]/.test(digits)) {
+        return '+7 ' + digits;
+      }
+      if (digits.length === 11 && digits.charAt(0) === '7') {
+        return '+7 ' + digits.slice(1);
+      }
+      return '';
+    }
+
+    function generateImportPassword(length) {
+      const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$%';
+      const size = length || 12;
+      const arr = new Uint32Array(size);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      let out = '';
+      for (let i = 0; i < size; i++) out += chars[arr[i] % chars.length];
+      return out;
+    }
+
+    function parseExcelRows(rows) {
+      const source = Array.isArray(rows) ? rows : [];
+      const startIndex = source.length && isProbablyExcelHeader(source[0]) ? 1 : 0;
+      const databaseSlugs = new Set(state.projects.map(function (p) { return String(p.id || '').toLowerCase(); }));
+      const allocatedSlugs = new Set();
+      const result = [];
+
+      for (let i = startIndex; i < source.length; i++) {
+        const row = source[i] || [];
+        const name = String(row[1] == null ? '' : row[1]).trim();
+        if (!name) continue;
+
+        const serviceText = String(row[2] == null ? '' : row[2]).trim();
+        const services = [];
+        const serviceSeen = new Set();
+        serviceText.split(';').forEach(function (part) {
+          const service = String(part || '').trim();
+          if (!service) return;
+          const key = service.toLowerCase().replace(/ё/g, 'е');
+          if (key === 'легковой автосервис') return;
+          if (serviceSeen.has(key)) return;
+          serviceSeen.add(key);
+          services.push(service);
+        });
+
+        const baseSlug = slugifyCompanyName(name);
+        const alreadyInDatabase = databaseSlugs.has(baseSlug);
+        let slug = baseSlug;
+        let existing = alreadyInDatabase;
+        if (!existing) {
+          slug = makeUniqueSlug(name, new Set([...databaseSlugs, ...allocatedSlugs]));
+          allocatedSlugs.add(slug);
+        }
+
+        const telegram = normalizeImportUrl(row[10]);
+        const phone = normalizeImportPhone(row[7]);
+
+        result.push({
+          sourceRow: i + 1,
+          name: name,
+          slug: slug,
+          existing: existing,
+          services: services,
+          address: String(row[3] == null ? '' : row[3]).trim(),
+          phone: phone,
+          telegram: telegram,
+          login: slug,
+          password: generateImportPassword(12)
+        });
+      }
+
+      return result;
+    }
+
+    function isProbablyExcelHeader(row) {
+      if (!row) return false;
+      const cells = row.map(function (v) { return String(v == null ? '' : v).trim().toLowerCase(); });
+      const joined = cells.join(' ');
+      return /назван|компани|услуг|адрес|телефон|telegram|телеграм|whatsapp/.test(joined)
+        || cells[1] === 'название';
+    }
+
+    async function handleExcelFile(e) {
+      const file = e.target.files && e.target.files[0];
+      state.importRows = [];
+      $('#btn-run-excel-import').disabled = true;
+      $('#excel-preview-wrap').style.display = 'none';
+      $('#excel-file-hint').textContent = 'Чтение файла…';
+      if (!file) return;
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) throw new Error('В Excel нет листов');
+        const ws = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+        state.importRows = parseExcelRows(rows);
+
+        $('#excel-file-hint').textContent = state.importRows.length
+          ? 'Найдено компаний: ' + state.importRows.length
+          : 'Не найдено строк с названиями компаний в столбце B';
+
+        renderExcelPreview();
+        $('#btn-run-excel-import').disabled = state.importRows.length === 0;
+      } catch (err) {
+        console.error(err);
+        $('#excel-file-hint').textContent = 'Ошибка: ' + (err.message || 'не удалось прочитать Excel');
+        App.toast('Не удалось прочитать Excel', 'error');
+      }
+    }
+
+    function renderExcelPreview() {
+      const wrap = $('#excel-preview-wrap');
+      const box = $('#excel-preview');
+      const price = Number($('#excel-default-price').value);
+      const duration = Number($('#excel-default-duration').value);
+      if (!state.importRows.length) {
+        wrap.style.display = 'none';
+        return;
+      }
+
+      const head = '<thead><tr>'
+        + '<th style="padding:8px;text-align:left">Компания</th>'
+        + '<th style="padding:8px;text-align:left">Slug</th>'
+        + '<th style="padding:8px;text-align:left">Услуги</th>'
+        + '<th style="padding:8px;text-align:left">Телефон</th>'
+        + '<th style="padding:8px;text-align:left">Telegram</th>'
+        + '<th style="padding:8px;text-align:left">Статус</th>'
+        + '</tr></thead>';
+      const body = state.importRows.map(function (r) {
+        return '<tr style="border-top:1px solid rgba(255,255,255,.08)">'
+          + '<td style="padding:8px;vertical-align:top">' + App.escapeHtml(r.name) + '</td>'
+          + '<td style="padding:8px;vertical-align:top"><code>' + App.escapeHtml(r.slug) + '</code></td>'
+          + '<td style="padding:8px;vertical-align:top">' + r.services.length + '</td>'
+          + '<td style="padding:8px;vertical-align:top">' + App.escapeHtml(r.phone || '—') + '</td>'
+          + '<td style="padding:8px;vertical-align:top">' + App.escapeHtml(r.telegram || '—') + '</td>'
+          + '<td style="padding:8px;vertical-align:top">' + (r.existing ? 'Пропустить: уже есть' : 'Будет создано') + '</td>'
+          + '</tr>';
+      }).join('');
+      box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">' + head + '<tbody>' + body + '</tbody></table>'
+        + '<div class="muted small" style="padding:10px">Цена по умолчанию: ' + App.escapeHtml(String(price || 0)) + ' · длительность: ' + App.escapeHtml(String(duration || 0)) + ' мин.</div>';
+      wrap.style.display = '';
+    }
+
+    async function runExcelImport() {
+      if (!state.importRows.length) return;
+      if (typeof XLSX === 'undefined') {
+        App.toast('Библиотека Excel не загружена', 'error');
+        return;
+      }
+
+      const defaultPrice = Number($('#excel-default-price').value);
+      const defaultDuration = Number($('#excel-default-duration').value);
+      if (!Number.isFinite(defaultPrice) || defaultPrice < 0) {
+        App.toast('Укажите корректную цену', 'error');
+        return;
+      }
+      if (!Number.isInteger(defaultDuration) || defaultDuration < 5) {
+        App.toast('Укажите корректную длительность', 'error');
+        return;
+      }
+
+      const rows = state.importRows.slice();
+      const toCreate = rows.filter(function (r) { return !r.existing; });
+      if (!toCreate.length) {
+        App.toast('Все компании из файла уже есть по своим slug', 'info');
+        closeModal('excel-import-modal');
+        return;
+      }
+
+      const ok = confirm('Создать ' + toCreate.length + ' компаний?\nЦена услуг: ' + defaultPrice + '\nДлительность: ' + defaultDuration + ' мин.');
+      if (!ok) return;
+
+      const btn = $('#btn-run-excel-import');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Импорт…';
+      $('#excel-progress-wrap').style.display = '';
+      $('#excel-progress').textContent = 'Подготовка…';
+      $('#excel-progress-bar').style.width = '0%';
+
+      const report = [];
+      for (let i = 0; i < toCreate.length; i++) {
+        const row = toCreate[i];
+        const progress = Math.round((i / toCreate.length) * 100);
+        $('#excel-progress').textContent = 'Компания ' + (i + 1) + ' из ' + toCreate.length + ': ' + row.name;
+        $('#excel-progress-bar').style.width = progress + '%';
+
+        try {
+          const socialLinks = row.telegram ? { [row.name]: row.telegram } : {};
+          const project = await App.createProject({
+            id: row.slug,
+            business_name: row.name,
+            admin_login: row.login,
+            admin_password: row.password,
+            industry: 'Авто — Автосервисы',
+            phone: row.phone || null,
+            address: row.address || null,
+            accent_color: '#ef4444',
+            background_color: '#0a0a0a',
+            logo_url: null,
+            banner_url: null,
+            social_links: socialLinks,
+            work_hours: {
+              start: '09:00',
+              end: '20:00',
+              slot_interval_minutes: 30,
+              days: [1, 2, 3, 4, 5, 6]
+            }
+          });
+
+          rememberCredentials(row.slug, row.login, row.password);
+
+          let createdServices = 0;
+          const serviceErrors = [];
+          for (let s = 0; s < row.services.length; s++) {
+            const name = row.services[s];
+            try {
+              await App.createService({
+                id: App.uuid(),
+                project_id: row.slug,
+                name: name,
+                price: defaultPrice,
+                duration_minutes: defaultDuration,
+                image_url: null,
+                description: null,
+                sort_order: s
+              });
+              createdServices += 1;
+            } catch (err) {
+              serviceErrors.push(name + ': ' + (err.message || 'ошибка'));
+            }
+          }
+
+          const bookingUrl = location.origin + '/booking.html?b=' + encodeURIComponent(row.slug);
+          report.push({
+            ok: serviceErrors.length === 0,
+            name: row.name,
+            slug: row.slug,
+            url: bookingUrl,
+            login: row.login,
+            password: row.password,
+            services: createdServices,
+            serviceErrors: serviceErrors
+          });
+        } catch (err) {
+          console.error('Excel import project', err);
+          report.push({
+            ok: false,
+            name: row.name,
+            slug: row.slug,
+            url: location.origin + '/booking.html?b=' + encodeURIComponent(row.slug),
+            login: row.login,
+            password: row.password,
+            services: 0,
+            serviceErrors: [err.message || 'Не удалось создать проект']
+          });
+        }
+
+        await new Promise(function (resolve) { setTimeout(resolve, 0); });
+      }
+
+      $('#excel-progress').textContent = 'Импорт завершён';
+      $('#excel-progress-bar').style.width = '100%';
+      btn.disabled = false;
+      btn.textContent = 'Создать компании';
+
+      await loadProjects();
+      closeModal('excel-import-modal');
+      renderExcelResult(report, rows.length - toCreate.length);
+      openModal('excel-result-modal');
+    }
+
+    function renderExcelResult(report, skippedCount) {
+      const successCount = report.filter(function (r) { return r.ok; }).length;
+      const failedCount = report.length - successCount;
+      $('#excel-result-summary').textContent = 'Создано: ' + successCount + ' · С предупреждениями/ошибками: ' + failedCount + ' · Пропущено как уже существующие: ' + skippedCount;
+
+      const head = '<thead><tr>'
+        + '<th style="padding:8px;text-align:left">Компания</th>'
+        + '<th style="padding:8px;text-align:left">Ссылка</th>'
+        + '<th style="padding:8px;text-align:left">Логин</th>'
+        + '<th style="padding:8px;text-align:left">Пароль</th>'
+        + '<th style="padding:8px;text-align:left">Услуги</th>'
+        + '<th style="padding:8px;text-align:left">Статус</th>'
+        + '</tr></thead>';
+      const body = report.map(function (r) {
+        const status = r.ok ? 'Готово' : 'Проверь';
+        const details = r.serviceErrors && r.serviceErrors.length
+          ? '<div class="muted small" style="margin-top:4px">' + App.escapeHtml(r.serviceErrors.join('; ')) + '</div>' : '';
+        return '<tr style="border-top:1px solid rgba(255,255,255,.08)">'
+          + '<td style="padding:8px;vertical-align:top"><strong>' + App.escapeHtml(r.name) + '</strong><div class="muted small"><code>' + App.escapeHtml(r.slug) + '</code></div></td>'
+          + '<td style="padding:8px;vertical-align:top"><a href="' + App.escapeHtml(r.url) + '" target="_blank" rel="noopener">Открыть</a></td>'
+          + '<td style="padding:8px;vertical-align:top">' + App.escapeHtml(r.login) + '</td>'
+          + '<td style="padding:8px;vertical-align:top"><code>' + App.escapeHtml(r.password) + '</code></td>'
+          + '<td style="padding:8px;vertical-align:top">' + r.services + '</td>'
+          + '<td style="padding:8px;vertical-align:top">' + status + details + '</td>'
+          + '</tr>';
+      }).join('');
+      $('#excel-result-table').innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">' + head + '<tbody>' + body + '</tbody></table>';
+
+      state.importReportText = report.map(function (r) {
+        return [
+          r.name,
+          'https://'+location.host+'/booking.html?b='+r.slug,
+          'Логин: ' + r.login,
+          'Пароль: ' + r.password,
+          'Услуг: ' + r.services,
+          r.ok ? 'Готово' : 'Проверь: ' + (r.serviceErrors || []).join('; ')
+        ].join(' | ');
+      }).join('\n');
+    }
+
+    // ============================================================
+    // Просмотр сохранённых данных входа
+    // ============================================================
+    function showCredentials(project) {
+      if (!project) return;
+
+      const stored = getStoredCredentials(project.id);
+      const url = location.origin + '/booking.html?b=' + encodeURIComponent(project.id);
+      const login = stored && stored.login ? stored.login : (project.admin_login || '');
+      const password = stored && stored.password ? stored.password : '';
+
+      $('#cm-business').value = project.business_name || project.id;
+      $('#cm-link').value = url;
+      $('#cm-login').value = login;
+      $('#cm-password').value = password;
+      $('#cm-password').type = 'password';
+      $('#cm-toggle-password').textContent = 'Показать';
+
+      if (password) {
+        $('#cm-hint').textContent = 'Пароль сохранён локально в браузере этой суперпанели. В Supabase он хранится в виде хеша и обратно не читается.';
+      } else {
+        $('#cm-hint').textContent = 'Для этого проекта пароль не сохранён в этом браузере. Его можно задать заново через «Редактировать». ';
+      }
+
+      $('#cm-copy-link').onclick = async function () {
+        const ok = await App.copyToClipboard(url);
+        App.toast(ok ? 'Ссылка скопирована' : 'Не удалось', ok ? 'success' : 'error');
+      };
+
+      $('#cm-copy-creds').onclick = async function () {
+        const creds = [
+          project.business_name || project.id,
+          'Ссылка: ' + url,
+          'Логин: ' + login,
+          'Пароль: ' + (password || 'не сохранён')
+        ].join('\n');
+        const ok = await App.copyToClipboard(creds);
+        App.toast(ok ? 'Данные скопированы' : 'Не удалось', ok ? 'success' : 'error');
+      };
+
+      $('#cm-toggle-password').onclick = function () {
+        const input = $('#cm-password');
+        const visible = input.type === 'text';
+        input.type = visible ? 'password' : 'text';
+        this.textContent = visible ? 'Показать' : 'Скрыть';
+      };
+
+      openModal('credentials-modal');
     }
 
     // ============================================================
