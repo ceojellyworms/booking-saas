@@ -1561,6 +1561,7 @@
             url: bookingUrl,
             login: row.login,
             password: row.password,
+            telegram: row.telegram || '',
             services: createdServices,
             serviceErrors: serviceErrors
           });
@@ -1573,6 +1574,7 @@
             url: location.origin + '/booking.html?b=' + encodeURIComponent(row.slug),
             login: row.login,
             password: row.password,
+            telegram: row.telegram || '',
             services: 0,
             serviceErrors: [err.message || 'Не удалось создать проект']
           });
@@ -1602,6 +1604,7 @@
         + '<th style="padding:8px;text-align:left">Ссылка</th>'
         + '<th style="padding:8px;text-align:left">Логин</th>'
         + '<th style="padding:8px;text-align:left">Пароль</th>'
+        + '<th style="padding:8px;text-align:left">Telegram</th>'
         + '<th style="padding:8px;text-align:left">Услуги</th>'
         + '<th style="padding:8px;text-align:left">Статус</th>'
         + '</tr></thead>';
@@ -1614,6 +1617,7 @@
           + '<td style="padding:8px;vertical-align:top"><a href="' + App.escapeHtml(r.url) + '" target="_blank" rel="noopener">Открыть</a></td>'
           + '<td style="padding:8px;vertical-align:top">' + App.escapeHtml(r.login) + '</td>'
           + '<td style="padding:8px;vertical-align:top"><code>' + App.escapeHtml(r.password) + '</code></td>'
+          + '<td style="padding:8px;vertical-align:top">' + (r.telegram ? '<a href="' + App.escapeHtml(r.telegram) + '" target="_blank" rel="noopener">' + App.escapeHtml(r.telegram) + '</a>' : '—') + '</td>'
           + '<td style="padding:8px;vertical-align:top">' + r.services + '</td>'
           + '<td style="padding:8px;vertical-align:top">' + status + details + '</td>'
           + '</tr>';
@@ -1626,6 +1630,7 @@
           'https://'+location.host+'/booking.html?b='+r.slug,
           'Логин: ' + r.login,
           'Пароль: ' + r.password,
+          'Telegram: ' + (r.telegram || '—'),
           'Услуг: ' + r.services,
           r.ok ? 'Готово' : 'Проверь: ' + (r.serviceErrors || []).join('; ')
         ].join(' | ');
