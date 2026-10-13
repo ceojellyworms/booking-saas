@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    {
+      "source": "/sb/:path*",
+      "destination": "https://kfylzmkwgvdirqdoibif.supabase.co/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sb/rest/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
+}
