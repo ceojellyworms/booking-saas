@@ -32,6 +32,42 @@
     return _client;
   }
 
+  // ------------------------------------------------------------
+  // Адреса файлов Supabase Storage.
+  // В базе всегда лежит настоящий адрес (supabase.co), чтобы данные не
+  // зависели от домена сайта. В браузере он подменяется на адрес прокси.
+  // ------------------------------------------------------------
+  function toProxyUrl(url) {
+    if (typeof url !== 'string' || typeof SUPABASE_ORIGIN === 'undefined') return url;
+    if (SUPABASE_URL === SUPABASE_ORIGIN) return url;
+    return url.indexOf(SUPABASE_ORIGIN + '/') === 0
+      ? SUPABASE_URL + url.slice(SUPABASE_ORIGIN.length)
+      : url;
+  }
+
+  function toCanonicalUrl(url) {
+    if (typeof url !== 'string' || typeof SUPABASE_ORIGIN === 'undefined') return url;
+    if (SUPABASE_URL === SUPABASE_ORIGIN) return url;
+    return url.indexOf(SUPABASE_URL + '/') === 0
+      ? SUPABASE_ORIGIN + url.slice(SUPABASE_URL.length)
+      : url;
+  }
+
+  function mapUrlFields(row, fields, fn) {
+    if (!row) return row;
+    fields.forEach(function (k) { if (row[k]) row[k] = fn(row[k]); });
+    return row;
+  }
+
+  function proxyProject(p) { return mapUrlFields(p, ['logo_url', 'banner_url'], toProxyUrl); }
+  function proxyService(s) { return mapUrlFields(s, ['image_url'], toProxyUrl); }
+
+  function canonicalFields(obj, fields) {
+    if (!obj) return obj;
+    const copy = Object.assign({}, obj);
+    return mapUrlFields(copy, fields, toCanonicalUrl);
+  }
+
   // ============================================================
   // 2. Утилиты
   // ============================================================
@@ -437,7 +473,7 @@
       .eq('is_active', true)
       .maybeSingle();
     if (error) throw error;
-    return data;
+    return proxyProject(data);
   }
 
   async function listProjects() {
@@ -446,7 +482,7 @@
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return (data || []).map(proxyProject);
   }
 
   async function createProject(payload) {
@@ -475,7 +511,7 @@
   async function updateProject(slug, patch) {
     const { data, error } = await getClient()
       .from('projects')
-      .update(patch)
+      .update(canonicalFields(patch, ['logo_url', 'banner_url']))
       .eq('id', slug)
       .select('id')
       .maybeSingle();
@@ -504,7 +540,7 @@
       .eq('id', slug)
       .maybeSingle();
     if (error) throw error;
-    return data;
+    return proxyProject(data);
   }
 
   // ============================================================
@@ -519,28 +555,28 @@
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
     if (error) throw error;
-    return data || [];
+    return (data || []).map(proxyService);
   }
 
   async function createService(payload) {
     const { data, error } = await getClient()
       .from('services')
-      .insert(payload)
+      .insert(canonicalFields(payload, ['image_url']))
       .select()
       .maybeSingle();
     if (error) throw error;
-    return data;
+    return proxyService(data);
   }
 
   async function updateService(id, patch) {
     const { data, error } = await getClient()
       .from('services')
-      .update(patch)
+      .update(canonicalFields(patch, ['image_url']))
       .eq('id', id)
       .select()
       .maybeSingle();
     if (error) throw error;
-    return data;
+    return proxyService(data);
   }
 
   async function deleteService(id) {
